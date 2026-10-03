@@ -63,11 +63,11 @@ local function createMainWindow()
         "https://raw.githubusercontent.com/AioveCN/RobloxScriptsAiove/main/background/02.png",
         "https://raw.githubusercontent.com/AioveCN/RobloxScriptsAiove/main/background/03.jpg",
         "https://raw.githubusercontent.com/AioveCN/RobloxScriptsAiove/main/background/04.png",
-                "https://raw.githubusercontent.com/AioveCN/RobloxScriptsAiove/main/background/05.jpg",
-                "https://raw.githubusercontent.com/AioveCN/RobloxScriptsAiove/main/background/06.png",
-                "https://raw.githubusercontent.com/AioveCN/RobloxScriptsAiove/main/background/07.png",
-                "https://raw.githubusercontent.com/AioveCN/RobloxScriptsAiove/main/background/08.png",
-                "https://raw.githubusercontent.com/AioveCN/RobloxScriptsAiove/main/background/09.png"
+        "https://raw.githubusercontent.com/AioveCN/RobloxScriptsAiove/main/background/05.jpg",
+        "https://raw.githubusercontent.com/AioveCN/RobloxScriptsAiove/main/background/06.png",
+        "https://raw.githubusercontent.com/AioveCN/RobloxScriptsAiove/main/background/07.png",
+        "https://raw.githubusercontent.com/AioveCN/RobloxScriptsAiove/main/background/08.png",
+        "https://raw.githubusercontent.com/AioveCN/RobloxScriptsAiove/main/background/09.png"
     }
 
     local currentBackground = ""
