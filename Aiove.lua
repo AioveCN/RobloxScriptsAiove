@@ -131,16 +131,12 @@ local function createMainWindow()
 
     InfoTab:Paragraph({
         Title = "当前服务器",
-        Desc = function()
-            return tostring(game.JobId ~= "" and game.JobId or "未知")
-        end
+        Desc = tostring(game.JobId ~= "" and game.JobId or "未知")
     })
 
     InfoTab:Paragraph({
         Title = "当前游戏",
-        Desc = function()
-            return tostring(game.PlaceId)
-        end
+        Desc = tostring(game.PlaceId)
     })
 
     InfoTab:Paragraph({
