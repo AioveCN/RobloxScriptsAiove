@@ -60,9 +60,14 @@ local function createMainWindow()
     -- UI 随机背景图：只作用于 UI，不涉及游戏功能。
     local BackgroundPool = {
         "https://raw.githubusercontent.com/AioveCN/RobloxScriptsAiove/main/background/01.jpg",
-        "https://raw.githubusercontent.com/AioveCN/RobloxScriptsAiove/main/background/02.jpg",
+        "https://raw.githubusercontent.com/AioveCN/RobloxScriptsAiove/main/background/02.png",
         "https://raw.githubusercontent.com/AioveCN/RobloxScriptsAiove/main/background/03.jpg",
-        "https://raw.githubusercontent.com/AioveCN/RobloxScriptsAiove/main/background/04.jpg"
+        "https://raw.githubusercontent.com/AioveCN/RobloxScriptsAiove/main/background/04.png",
+                "https://raw.githubusercontent.com/AioveCN/RobloxScriptsAiove/main/background/05.jpg",
+                "https://raw.githubusercontent.com/AioveCN/RobloxScriptsAiove/main/background/06.png",
+                "https://raw.githubusercontent.com/AioveCN/RobloxScriptsAiove/main/background/07.png",
+                "https://raw.githubusercontent.com/AioveCN/RobloxScriptsAiove/main/background/08.png",
+                "https://raw.githubusercontent.com/AioveCN/RobloxScriptsAiove/main/background/09.png"
     }
 
     local currentBackground = ""
