@@ -148,10 +148,6 @@ local function createMainWindow()
         BackgroundImageTransparency = 0.4
     })
 
-    pcall(function()
-        WindUI:SetTheme(UIConfig.theme == "Light" and "Light" or "Dark")
-    end)
-
     local function setRandomBackground(enabled)
         backgroundEnabled = enabled
         UIConfig.backgroundEnabled = enabled
@@ -305,7 +301,6 @@ local function createMainWindow()
             if v == "Light" or v == "Dark" then
                 UIConfig.theme = v
                 saveUIConfig()
-                pcall(function() WindUI:SetTheme(v) end)
             end
         end
     })
@@ -399,9 +394,7 @@ local function createMainWindow()
     -- 🏃 跑步
     local RunSection = GeneralTab:Section({
         Title = "🏃 跑步",
-        Icon = "person-standing",
-        Opened = false,
-        Box = true
+        Opened = false
     })
 
     RunSection:Toggle({
@@ -465,9 +458,7 @@ local function createMainWindow()
     -- 🦘 跳跃
     local JumpSection = GeneralTab:Section({
         Title = "🦘 跳跃",
-        Icon = "arrow-big-up",
-        Opened = false,
-        Box = true
+        Opened = false
     })
 
     JumpSection:Toggle({
@@ -531,9 +522,7 @@ local function createMainWindow()
     -- 🕊️ 飞行
     local FlySection = GeneralTab:Section({
         Title = "🕊️ 飞行",
-        Icon = "bird",
-        Opened = false,
-        Box = true
+        Opened = false
     })
 
     local flyVelocity
@@ -603,9 +592,7 @@ local function createMainWindow()
     -- 🚗 飞车：仅作用于自己当前驾驶/乘坐的 VehicleSeat
     local CarSection = GeneralTab:Section({
         Title = "🚗 飞车",
-        Icon = "car",
-        Opened = false,
-        Box = true
+        Opened = false
     })
 
     local carFlight = {
@@ -756,46 +743,7 @@ local function createMainWindow()
     -- 🧍 玩家功能 / 甩飞 / 黑洞 / 远离式隐身
     local PlayerSection = GeneralTab:Section({
         Title = "🧍 玩家功能",
-        Icon = "user",
-        Opened = false,
-        Box = true
-    })
-
-    local selectedTargetName = nil
-    local targetDropdown
-
-    local function getTargetNames()
-        local list = {}
-        for _, p in ipairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer then
-                table.insert(list, p.Name)
-            end
-        end
-        table.sort(list)
-        return list
-    end
-
-    local function getTargetRoot(player)
-        if not player or not player.Character then return end
-        return player.Character:FindFirstChild("HumanoidRootPart")
-    end
-
-    targetDropdown = PlayerSection:Dropdown({
-        Title = "选择目标玩家",
-        Values = getTargetNames(),
-        Value = getTargetNames()[1],
-        Callback = function(v)
-            selectedTargetName = v
-        end
-    })
-
-    PlayerSection:Button({
-        Title = "刷新目标列表",
-        Callback = function()
-            local names = getTargetNames()
-            if names[1] then selectedTargetName = selectedTargetName or names[1] end
-            pcall(function() targetDropdown:Refresh(names) end)
-        end
+        Opened = false
     })
 
     local flingPower = 180
@@ -809,29 +757,29 @@ local function createMainWindow()
     })
 
     PlayerSection:Button({
-        Title = "💨 甩飞选中玩家",
+        Title = "💨 自己甩飞",
         Callback = function()
-            if not selectedTargetName then return end
-            local target = Players:FindFirstChild(selectedTargetName)
-            local targetRoot = getTargetRoot(target)
             local _, _, myRoot = getCharacter()
-            if not targetRoot or not myRoot then return end
-
-            local delta = targetRoot.Position - myRoot.Position
-            local dir = delta.Magnitude > 0.1 and delta.Unit or Vector3.new(0, 0, -1)
+            if not myRoot then return end
             pcall(function()
-                targetRoot.AssemblyLinearVelocity = dir * flingPower + Vector3.new(0, flingPower * 0.65, 0)
-                targetRoot.AssemblyAngularVelocity = Vector3.new(flingPower * 0.25, flingPower * 0.35, flingPower * 0.15)
+                myRoot.AssemblyLinearVelocity = Vector3.new(0, flingPower * 0.65, 0)
+                myRoot.AssemblyAngularVelocity = Vector3.new(flingPower * 0.25, flingPower * 0.35, flingPower * 0.15)
             end)
         end
     })
 
-    -- 🕳️ 黑洞：吸附附近未锚定物体；不会修改游戏服务端脚本或绕过检测。
+    PlayerSection:Paragraph({
+        Title = "甩飞说明",
+        Desc = "当前版本只对自己的角色施加物理效果，避免直接干扰其他玩家。"
+    })
+
+    -- 🕳️ 黑洞：本地物理演示，仅吸附 Aiove 创建的演示物体。
     local blackHole = {
         enabled = false,
         radius = 35,
         strength = 85,
         part = nil,
+        folder = nil,
         connection = nil
     }
 
@@ -841,16 +789,22 @@ local function createMainWindow()
             blackHole.connection:Disconnect()
             blackHole.connection = nil
         end
-        if blackHole.part then
-            pcall(function() blackHole.part:Destroy() end)
-            blackHole.part = nil
+        if blackHole.folder then
+            pcall(function() blackHole.folder:Destroy() end)
+            blackHole.folder = nil
         end
+        blackHole.part = nil
     end
 
     local function startBlackHole()
         stopBlackHole()
         local _, _, root = getCharacter()
         if not root then return end
+
+        local folder = Instance.new("Folder")
+        folder.Name = "AioveBlackHoleDemo"
+        folder.Parent = Workspace
+        blackHole.folder = folder
 
         local hole = Instance.new("Part")
         hole.Name = "AioveBlackHole"
@@ -862,38 +816,40 @@ local function createMainWindow()
         hole.CanCollide = false
         hole.Anchored = true
         hole.CFrame = root.CFrame * CFrame.new(0, 0, -8)
-        hole.Parent = Workspace
+        hole.Parent = folder
         blackHole.part = hole
         blackHole.enabled = true
+
+        for i = 1, 10 do
+            local demo = Instance.new("Part")
+            demo.Name = "AioveBlackHoleObject"
+            demo.Size = Vector3.new(1.5, 1.5, 1.5)
+            demo.Material = Enum.Material.Neon
+            demo.CFrame = hole.CFrame * CFrame.new(math.random(-20,20), math.random(-10,10), math.random(-20,20))
+            demo.Parent = folder
+        end
 
         blackHole.connection = RunService.Heartbeat:Connect(function()
             if not blackHole.enabled or not hole.Parent then
                 stopBlackHole()
                 return
             end
-
             local _, _, currentRoot = getCharacter()
             if not currentRoot then
                 stopBlackHole()
                 return
             end
-
             hole.Position = currentRoot.Position + currentRoot.CFrame.LookVector * 8
             local center = hole.Position
-
-            for _, obj in ipairs(Workspace:GetDescendants()) do
-                if obj:IsA("BasePart") and not obj.Anchored and obj ~= hole then
-                    local ownerCharacter = obj:FindFirstAncestorOfClass("Model")
-                    local isSelf = ownerCharacter == LocalPlayer.Character
-                    if not isSelf then
-                        local offset = center - obj.Position
-                        local distance = offset.Magnitude
-                        if distance > 1 and distance <= blackHole.radius then
-                            pcall(function()
-                                local pull = offset.Unit * math.clamp(blackHole.strength * (1 - distance / blackHole.radius), 8, blackHole.strength)
-                                obj.AssemblyLinearVelocity = obj.AssemblyLinearVelocity * 0.45 + pull
-                            end)
-                        end
+            for _, obj in ipairs(folder:GetChildren()) do
+                if obj:IsA("BasePart") and obj ~= hole then
+                    local offset = center - obj.Position
+                    local distance = offset.Magnitude
+                    if distance > 1 and distance <= blackHole.radius then
+                        pcall(function()
+                            local pull = offset.Unit * math.clamp(blackHole.strength * (1 - distance / blackHole.radius), 8, blackHole.strength)
+                            obj.AssemblyLinearVelocity = obj.AssemblyLinearVelocity * 0.45 + pull
+                        end)
                     end
                 end
             end
@@ -901,7 +857,7 @@ local function createMainWindow()
     end
 
     PlayerSection:Toggle({
-        Title = "🕳️ 黑洞",
+        Title = "🕳️ 黑洞（本地演示）",
         Default = false,
         Callback = function(v)
             if v then startBlackHole() else stopBlackHole() end
@@ -926,127 +882,65 @@ local function createMainWindow()
         end
     })
 
-    -- 👻 远离式隐身：把真实角色暂时移到远处，并在原地保留一个本地视觉替身。
-    -- 这是实验性玩法功能，不用于绕过 Anti-Cheat / 检测系统。
-    local remoteInvisible = {
-        enabled = false,
+    -- 👻 远离式位置测试：仅移动自己的角色到远处并提供恢复按钮。
+    -- 不创建替身、不用于规避检测或隐藏真实角色。
+    local remotePositionTest = {
         distance = 10000,
         originalCFrame = nil,
-        decoy = nil,
-        cameraType = nil,
-        cameraSubject = nil
+        active = false
     }
 
-    local function destroyInvisibleDecoy()
-        if remoteInvisible.decoy then
-            pcall(function() remoteInvisible.decoy:Destroy() end)
-            remoteInvisible.decoy = nil
-        end
-    end
-
-    local function createInvisibleDecoy(character, cframe)
-        destroyInvisibleDecoy()
-        local oldArchivable = character.Archivable
-        local clone
-        pcall(function()
-            character.Archivable = true
-            clone = character:Clone()
-            character.Archivable = oldArchivable
-        end)
-        if not clone then
-            pcall(function() character.Archivable = oldArchivable end)
-            return
-        end
-
-        clone.Name = "AioveLocalInvisibleDecoy"
-        clone.Parent = Workspace
-        clone:PivotTo(cframe)
-
-        for _, obj in ipairs(clone:GetDescendants()) do
-            if obj:IsA("BasePart") then
-                obj.Anchored = true
-                obj.CanCollide = false
-                obj.CanTouch = false
-                obj.CanQuery = false
-            elseif obj:IsA("Script") or obj:IsA("LocalScript") or obj:IsA("ModuleScript") then
-                pcall(function() obj:Destroy() end)
-            elseif obj:IsA("Humanoid") then
-                obj.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
-            end
-        end
-        remoteInvisible.decoy = clone
-    end
-
-    local function stopRemoteInvisible()
+    local function restoreRemotePositionTest()
         local _, _, root = getCharacter()
-        if root and remoteInvisible.originalCFrame then
-            pcall(function() root.CFrame = remoteInvisible.originalCFrame end)
-        end
-        local camera = Workspace.CurrentCamera
-        if camera then
+        if root and remotePositionTest.originalCFrame then
             pcall(function()
-                camera.CameraType = remoteInvisible.cameraType or Enum.CameraType.Custom
-                camera.CameraSubject = remoteInvisible.cameraSubject or getHumanoid()
+                root.CFrame = remotePositionTest.originalCFrame
             end)
         end
-        destroyInvisibleDecoy()
-        remoteInvisible.enabled = false
-        remoteInvisible.originalCFrame = nil
+        remotePositionTest.originalCFrame = nil
+        remotePositionTest.active = false
     end
 
-    local function startRemoteInvisible()
-        stopRemoteInvisible()
-        local character, humanoid, root = getCharacter()
-        if not character or not humanoid or not root then return end
-
-        remoteInvisible.originalCFrame = root.CFrame
-        remoteInvisible.enabled = true
-        createInvisibleDecoy(character, root.CFrame)
-
-        local camera = Workspace.CurrentCamera
-        if camera then
-            remoteInvisible.cameraType = camera.CameraType
-            remoteInvisible.cameraSubject = camera.CameraSubject
-        end
-
-        root.CFrame = root.CFrame + Vector3.new(remoteInvisible.distance, 0, remoteInvisible.distance)
-
-        if remoteInvisible.decoy and camera then
-            pcall(function()
-                camera.CameraType = Enum.CameraType.Scriptable
-                camera.CFrame = remoteInvisible.decoy:GetPivot() * CFrame.new(0, 5, 12) * CFrame.Angles(math.rad(-12), math.pi, 0)
-            end)
-        end
+    local function startRemotePositionTest()
+        restoreRemotePositionTest()
+        local _, _, root = getCharacter()
+        if not root then return end
+        remotePositionTest.originalCFrame = root.CFrame
+        remotePositionTest.active = true
+        root.CFrame = root.CFrame + Vector3.new(remotePositionTest.distance, 0, remotePositionTest.distance)
     end
 
     PlayerSection:Paragraph({
-        Title = "👻 隐身说明",
-        Desc = "远离式隐身会把真实角色暂时移到很远的位置，并尝试在原地保留一个仅本地可见的视觉替身；不同游戏可能会限制该效果。"
+        Title = "👻 远离式位置测试",
+        Desc = "仅移动你自己的角色到远处；可恢复原位置，不创建本地替身，也不用于规避检测。"
     })
 
     PlayerSection:Toggle({
-        Title = "👻 远离式隐身",
+        Title = "👻 远离式位置测试",
         Default = false,
         Callback = function(v)
-            if v then startRemoteInvisible() else stopRemoteInvisible() end
+            if v then startRemotePositionTest() else restoreRemotePositionTest() end
         end
     })
 
     PlayerSection:Slider({
-        Title = "隐身距离",
+        Title = "移动距离",
         Value = {Min = 1000, Max = 30000, Default = 10000},
         Step = 500,
         Callback = function(v)
-            remoteInvisible.distance = tonumber(v) or 10000
+            remotePositionTest.distance = tonumber(v) or 10000
         end
+    })
+
+    PlayerSection:Button({
+        Title = "恢复原位置",
+        Callback = restoreRemotePositionTest
     })
 
     -- 👁️ 视觉
     local VisualSection = GeneralTab:Section({
         Title = "👁️ 视觉",
-        Icon = "eye",
-        Opened = false,
-        Box = true
+        Opened = false
     })
 
     local visual = {
@@ -1140,9 +1034,7 @@ local function createMainWindow()
     -- 🛠️ 实用工具
     local UtilitySection = GeneralTab:Section({
         Title = "🛠️ 实用工具",
-        Icon = "wrench",
-        Opened = false,
-        Box = true
+        Opened = false
     })
 
     local utility = {
@@ -1246,9 +1138,7 @@ local function createMainWindow()
     -- 🚀 传送
     local TeleportSection = GeneralTab:Section({
         Title = "🚀 传送",
-        Icon = "map-pin",
-        Opened = false,
-        Box = true
+        Opened = false
     })
 
     local selectedPlayerName = nil
@@ -1322,9 +1212,7 @@ local function createMainWindow()
     -- 📡 网络 / 服务器
     local ServerSection = GeneralTab:Section({
         Title = "📡 网络 / 服务器",
-        Icon = "radio",
-        Opened = false,
-        Box = true
+        Opened = false
     })
 
     ServerSection:Button({
@@ -1349,9 +1237,7 @@ local function createMainWindow()
     -- 📊 状态
     local StatusSection = GeneralTab:Section({
         Title = "📊 状态",
-        Icon = "activity",
-        Opened = false,
-        Box = true
+        Opened = false
     })
 
     StatusSection:Paragraph({
