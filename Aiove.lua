@@ -11,6 +11,60 @@ local UserInputService = game:GetService("UserInputService")
 local VirtualUser = game:GetService("VirtualUser")
 local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
+
+-- 本地配置：记录启动次数，并可记住上次的主要设置。
+local UIConfigFile = "AioveCNHub_UIConfig.json"
+local UIConfig = {
+    launchCount = 0,
+    lastLaunch = "",
+    rememberSettings = true,
+    backgroundEnabled = false,
+    background = "",
+    theme = "Dark",
+    settings = {}
+}
+
+local function loadUIConfig()
+    if type(isfile) ~= "function" or type(readfile) ~= "function" then
+        return false
+    end
+    local ok, data = pcall(function()
+        if not isfile(UIConfigFile) then return nil end
+        return HttpService:JSONDecode(readfile(UIConfigFile))
+    end)
+    if ok and type(data) == "table" then
+        for k, v in pairs(data) do UIConfig[k] = v end
+        if type(UIConfig.settings) ~= "table" then UIConfig.settings = {} end
+        return true
+    end
+    return false
+end
+
+local function saveUIConfig()
+    if type(writefile) ~= "function" then return false end
+    return pcall(function()
+        writefile(UIConfigFile, HttpService:JSONEncode(UIConfig))
+    end)
+end
+
+local configPersistenceAvailable = loadUIConfig()
+UIConfig.launchCount = (tonumber(UIConfig.launchCount) or 0) + 1
+UIConfig.lastLaunch = os.date("%Y-%m-%d %H:%M:%S")
+saveUIConfig()
+
+local function getSavedSetting(key, default)
+    if UIConfig.rememberSettings and type(UIConfig.settings) == "table" and UIConfig.settings[key] ~= nil then
+        return UIConfig.settings[key]
+    end
+    return default
+end
+
+local function rememberSetting(key, value)
+    if UIConfig.rememberSettings then
+        UIConfig.settings[key] = value
+        saveUIConfig()
+    end
+end
 local Lighting = game:GetService("Lighting")
 local Workspace = game:GetService("Workspace")
 
@@ -60,18 +114,18 @@ local function createMainWindow()
     -- UI 随机背景图：只作用于 UI，不涉及游戏功能。
     local BackgroundPool = {
         "https://raw.githubusercontent.com/AioveCN/RobloxScriptsAiove/main/background/01.jpg",
-        "https://raw.githubusercontent.com/AioveCN/RobloxScriptsAiove/main/background/02.png",
+        "https://raw.githubusercontent.com/AioveCN/RobloxScriptsAiove/main/background/02.jpg",
         "https://raw.githubusercontent.com/AioveCN/RobloxScriptsAiove/main/background/03.jpg",
-        "https://raw.githubusercontent.com/AioveCN/RobloxScriptsAiove/main/background/04.png",
+        "https://raw.githubusercontent.com/AioveCN/RobloxScriptsAiove/main/background/04.jpg",
         "https://raw.githubusercontent.com/AioveCN/RobloxScriptsAiove/main/background/05.jpg",
-        "https://raw.githubusercontent.com/AioveCN/RobloxScriptsAiove/main/background/06.png",
-        "https://raw.githubusercontent.com/AioveCN/RobloxScriptsAiove/main/background/07.png",
+        "https://raw.githubusercontent.com/AioveCN/RobloxScriptsAiove/main/background/06.jpg",
+        "https://raw.githubusercontent.com/AioveCN/RobloxScriptsAiove/main/background/07.jpg",
         "https://raw.githubusercontent.com/AioveCN/RobloxScriptsAiove/main/background/08.png",
         "https://raw.githubusercontent.com/AioveCN/RobloxScriptsAiove/main/background/09.png"
     }
 
-    local currentBackground = ""
-    local backgroundEnabled = false
+    local currentBackground = tostring(UIConfig.background or "")
+    local backgroundEnabled = UIConfig.rememberSettings and UIConfig.backgroundEnabled == true
 
     local Window = WindUI:CreateWindow({
         Title = "欢迎您的使用",
@@ -94,10 +148,17 @@ local function createMainWindow()
         BackgroundImageTransparency = 0.4
     })
 
+    pcall(function()
+        WindUI:SetTheme(UIConfig.theme == "Light" and "Light" or "Dark")
+    end)
+
     local function setRandomBackground(enabled)
         backgroundEnabled = enabled
+        UIConfig.backgroundEnabled = enabled
         if not enabled then
             currentBackground = ""
+            UIConfig.background = ""
+            saveUIConfig()
             pcall(function()
                 Window:SetBackground("")
             end)
@@ -116,6 +177,8 @@ local function createMainWindow()
         end
 
         currentBackground = nextBackground
+        UIConfig.background = nextBackground
+        saveUIConfig()
 
         pcall(function()
             Window:SetBackground(nextBackground)
@@ -216,12 +279,68 @@ local function createMainWindow()
     })
 
     InfoTab:Paragraph({
+        Title = "📈 启动记录",
+        Desc = "本地记录启动次数：" .. tostring(UIConfig.launchCount) .. " 次\n上次启动：" .. tostring(UIConfig.lastLaunch)
+    })
+
+    InfoTab:Paragraph({
+        Title = "💾 设置记录",
+        Desc = configPersistenceAvailable and "当前环境支持本地配置保存。开启后会记住上次的主要设置。" or "当前环境未提供文件保存接口，只能记录本次运行。"
+    })
+
+    InfoTab:Toggle({
+        Title = "记住上次设置",
+        Default = UIConfig.rememberSettings == true,
+        Callback = function(v)
+            UIConfig.rememberSettings = v
+            saveUIConfig()
+        end
+    })
+
+    InfoTab:Dropdown({
+        Title = "UI 主题",
+        Values = {"Dark", "Light"},
+        Value = (UIConfig.theme == "Light" and "Light" or "Dark"),
+        Callback = function(v)
+            if v == "Light" or v == "Dark" then
+                UIConfig.theme = v
+                saveUIConfig()
+                pcall(function() WindUI:SetTheme(v) end)
+            end
+        end
+    })
+
+    InfoTab:Button({
+        Title = "保存当前设置",
+        Callback = function()
+            UIConfig.backgroundEnabled = backgroundEnabled
+            UIConfig.background = currentBackground
+            saveUIConfig()
+        end
+    })
+
+    InfoTab:Button({
+        Title = "恢复上次背景设置",
+        Callback = function()
+            if UIConfig.rememberSettings and UIConfig.backgroundEnabled and UIConfig.background ~= "" then
+                backgroundEnabled = true
+                currentBackground = UIConfig.background
+                pcall(function() Window:SetBackground(UIConfig.background) end)
+            else
+                backgroundEnabled = false
+                currentBackground = ""
+                pcall(function() Window:SetBackground("") end)
+            end
+        end
+    })
+
+    InfoTab:Paragraph({
         Title = "背景说明",
         Desc = "背景图片使用公开图片 URL；如果图片地址不可用，UI 本身仍可正常运行。"
     })
 
     -- =========================================================
-    -- 通用
+    -- 通用：使用可折叠 Section 分组，点击标题展开/收起
     -- =========================================================
     local GeneralTab = Window:Tab({
         Title = "通用",
@@ -229,9 +348,10 @@ local function createMainWindow()
     })
 
     GeneralTab:Paragraph({
-        Title = "🏃 移动",
-        Desc = "通用功能"
+        Title = "🧩 通用功能中心",
+        Desc = "点击下面的功能块标题即可展开或收起；设置会尽量保持与原版本一致。"
     })
+
     local movement = {
         speed = 16,
         speedEnabled = false,
@@ -253,30 +373,43 @@ local function createMainWindow()
     local function applyMovement()
         local h = getHumanoid()
         if not h then return end
+
         if movement.speedEnabled then
             h.WalkSpeed = movement.speed
         elseif not movement.sprint then
             h.WalkSpeed = savedWalkSpeed
         end
+
         if movement.jumpEnabled then
             h.UseJumpPower = true
             h.JumpPower = movement.jumpPower
         end
+
         if movement.gravityEnabled then
             Workspace.Gravity = movement.gravity
         else
             Workspace.Gravity = 196.2
         end
+
         pcall(function()
             h.HipHeight = movement.hipHeight
         end)
     end
 
-    GeneralTab:Toggle({
+    -- 🏃 跑步
+    local RunSection = GeneralTab:Section({
+        Title = "🏃 跑步",
+        Icon = "person-standing",
+        Opened = false,
+        Box = true
+    })
+
+    RunSection:Toggle({
         Title = "WalkSpeed",
-        Default = false,
+        Default = getSavedSetting("speedEnabled", false),
         Callback = function(v)
             movement.speedEnabled = v
+            rememberSetting("speedEnabled", v)
             local h = getHumanoid()
             if h then
                 if v then
@@ -289,12 +422,13 @@ local function createMainWindow()
         end
     })
 
-    GeneralTab:Slider({
+    RunSection:Slider({
         Title = "WalkSpeed 数值",
-        Value = {Min = 16, Max = 200, Default = 16},
+        Value = {Min = 16, Max = 200, Default = tonumber(getSavedSetting("speed", 16)) or 16},
         Step = 1,
         Callback = function(v)
             movement.speed = tonumber(v) or 16
+            rememberSetting("speed", movement.speed)
             if movement.speedEnabled then
                 local h = getHumanoid()
                 if h then h.WalkSpeed = movement.speed end
@@ -302,7 +436,7 @@ local function createMainWindow()
         end
     })
 
-    GeneralTab:Toggle({
+    RunSection:Toggle({
         Title = "Sprint",
         Default = false,
         Callback = function(v)
@@ -319,7 +453,24 @@ local function createMainWindow()
         end
     })
 
-    GeneralTab:Toggle({
+    RunSection:Toggle({
+        Title = "Noclip",
+        Default = getSavedSetting("noclip", false),
+        Callback = function(v)
+            movement.noclip = v
+            rememberSetting("noclip", v)
+        end
+    })
+
+    -- 🦘 跳跃
+    local JumpSection = GeneralTab:Section({
+        Title = "🦘 跳跃",
+        Icon = "arrow-big-up",
+        Opened = false,
+        Box = true
+    })
+
+    JumpSection:Toggle({
         Title = "跳跃控制",
         Default = false,
         Callback = function(v)
@@ -328,7 +479,7 @@ local function createMainWindow()
         end
     })
 
-    GeneralTab:Slider({
+    JumpSection:Slider({
         Title = "JumpPower",
         Value = {Min = 25, Max = 200, Default = 50},
         Step = 1,
@@ -338,15 +489,25 @@ local function createMainWindow()
         end
     })
 
-    GeneralTab:Toggle({
+    JumpSection:Toggle({
         Title = "无限跳跃",
-        Default = false,
+        Default = getSavedSetting("infiniteJump", false),
         Callback = function(v)
             movement.infiniteJump = v
+            rememberSetting("infiniteJump", v)
         end
     })
 
-    GeneralTab:Slider({
+    JumpSection:Toggle({
+        Title = "Bhop",
+        Default = getSavedSetting("bhop", false),
+        Callback = function(v)
+            movement.bhop = v
+            rememberSetting("bhop", v)
+        end
+    })
+
+    JumpSection:Slider({
         Title = "Gravity",
         Value = {Min = 10, Max = 196, Default = 196},
         Step = 1,
@@ -358,7 +519,7 @@ local function createMainWindow()
         end
     })
 
-    GeneralTab:Toggle({
+    JumpSection:Toggle({
         Title = "自定义 Gravity",
         Default = false,
         Callback = function(v)
@@ -367,36 +528,14 @@ local function createMainWindow()
         end
     })
 
-    GeneralTab:Slider({
-        Title = "HipHeight",
-        Value = {Min = 0, Max = 10, Default = 2},
-        Step = 0.1,
-        Callback = function(v)
-            movement.hipHeight = tonumber(v) or 2
-            applyMovement()
-        end
+    -- 🕊️ 飞行
+    local FlySection = GeneralTab:Section({
+        Title = "🕊️ 飞行",
+        Icon = "bird",
+        Opened = false,
+        Box = true
     })
 
-    GeneralTab:Toggle({
-        Title = "Noclip",
-        Default = false,
-        Callback = function(v)
-            movement.noclip = v
-        end
-    })
-
-    GeneralTab:Toggle({
-        Title = "Bhop",
-        Default = false,
-        Callback = function(v)
-            movement.bhop = v
-        end
-    })
-
-    GeneralTab:Paragraph({
-        Title = "🕊 飞行",
-        Desc = "通用功能"
-    })
     local flyVelocity
     local flyConnection
 
@@ -442,16 +581,17 @@ local function createMainWindow()
         end)
     end
 
-    GeneralTab:Toggle({
+    FlySection:Toggle({
         Title = "Fly",
-        Default = false,
+        Default = getSavedSetting("fly", false),
         Callback = function(v)
             movement.fly = v
+            rememberSetting("fly", v)
             if v then startFly() else stopFly() end
         end
     })
 
-    GeneralTab:Slider({
+    FlySection:Slider({
         Title = "Fly Speed",
         Value = {Min = 10, Max = 200, Default = 60},
         Step = 1,
@@ -460,10 +600,455 @@ local function createMainWindow()
         end
     })
 
-    GeneralTab:Paragraph({
-        Title = "👁 视觉",
-        Desc = "通用功能"
+    -- 🚗 飞车：仅作用于自己当前驾驶/乘坐的 VehicleSeat
+    local CarSection = GeneralTab:Section({
+        Title = "🚗 飞车",
+        Icon = "car",
+        Opened = false,
+        Box = true
     })
+
+    local carFlight = {
+        enabled = false,
+        speed = 80,
+        verticalSpeed = 55
+    }
+    local carVelocity
+    local carGyro
+    local carConnection
+
+    local function getVehicleRoot()
+        local character = LocalPlayer.Character
+        if not character then return end
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if not humanoid then return end
+
+        local seat = humanoid.SeatPart
+        if not seat or not seat:IsA("VehicleSeat") then return end
+
+        local root = seat.AssemblyRootPart or seat
+        return seat, root
+    end
+
+    local function stopCarFlight()
+        if carConnection then
+            carConnection:Disconnect()
+            carConnection = nil
+        end
+        if carVelocity then
+            pcall(function() carVelocity:Destroy() end)
+            carVelocity = nil
+        end
+        if carGyro then
+            pcall(function() carGyro:Destroy() end)
+            carGyro = nil
+        end
+    end
+
+    local function startCarFlight()
+        stopCarFlight()
+
+        local seat, root = getVehicleRoot()
+        if not seat or not root then
+            warn("[AioveCN] 飞车：请先坐进 VehicleSeat。")
+            return
+        end
+
+        carVelocity = Instance.new("BodyVelocity")
+        carVelocity.MaxForce = Vector3.new(1e7, 1e7, 1e7)
+        carVelocity.P = 15000
+        carVelocity.Velocity = Vector3.zero
+        carVelocity.Parent = root
+
+        carGyro = Instance.new("BodyGyro")
+        carGyro.MaxTorque = Vector3.new(1e7, 1e7, 1e7)
+        carGyro.P = 15000
+        carGyro.D = 500
+        carGyro.Parent = root
+
+        carConnection = RunService.RenderStepped:Connect(function()
+            if not carFlight.enabled then
+                stopCarFlight()
+                return
+            end
+
+            local currentSeat, currentRoot = getVehicleRoot()
+            if not currentSeat or not currentRoot or currentRoot ~= root or not root.Parent then
+                stopCarFlight()
+                return
+            end
+
+            local cam = Workspace.CurrentCamera
+            if not cam then return end
+
+            local forward = cam.CFrame.LookVector
+            local right = cam.CFrame.RightVector
+            local throttle = tonumber(currentSeat.ThrottleFloat) or 0
+            local steer = tonumber(currentSeat.SteerFloat) or 0
+
+            local horizontal = forward * throttle
+            if math.abs(steer) > 0.01 then
+                horizontal += right * steer * 0.65
+            end
+
+            local vertical = 0
+            if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+                vertical += carFlight.verticalSpeed
+            end
+            if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
+                vertical -= carFlight.verticalSpeed
+            end
+
+            if horizontal.Magnitude > 1 then
+                horizontal = horizontal.Unit * carFlight.speed
+            end
+
+            carVelocity.Velocity = Vector3.new(
+                horizontal.X,
+                vertical,
+                horizontal.Z
+            )
+
+            local look = Vector3.new(forward.X, 0, forward.Z)
+            if look.Magnitude > 0.05 then
+                carGyro.CFrame = CFrame.lookAt(root.Position, root.Position + look.Unit)
+            end
+        end)
+    end
+
+    CarSection:Paragraph({
+        Title = "使用说明",
+        Desc = "先坐进 VehicleSeat，再开启飞车。W/S、方向控制由载具座椅提供；Space 上升、Shift 下降。"
+    })
+
+    CarSection:Toggle({
+        Title = "飞车",
+        Default = getSavedSetting("carFlight", false),
+        Callback = function(v)
+            carFlight.enabled = v
+            rememberSetting("carFlight", v)
+            if v then
+                startCarFlight()
+            else
+                stopCarFlight()
+            end
+        end
+    })
+
+    CarSection:Slider({
+        Title = "飞车速度",
+        Value = {Min = 20, Max = 250, Default = 80},
+        Step = 5,
+        Callback = function(v)
+            carFlight.speed = tonumber(v) or 80
+        end
+    })
+
+    CarSection:Slider({
+        Title = "升降速度",
+        Value = {Min = 20, Max = 150, Default = 55},
+        Step = 5,
+        Callback = function(v)
+            carFlight.verticalSpeed = tonumber(v) or 55
+        end
+    })
+
+    -- 🧍 玩家功能 / 甩飞 / 黑洞 / 远离式隐身
+    local PlayerSection = GeneralTab:Section({
+        Title = "🧍 玩家功能",
+        Icon = "user",
+        Opened = false,
+        Box = true
+    })
+
+    local selectedTargetName = nil
+    local targetDropdown
+
+    local function getTargetNames()
+        local list = {}
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer then
+                table.insert(list, p.Name)
+            end
+        end
+        table.sort(list)
+        return list
+    end
+
+    local function getTargetRoot(player)
+        if not player or not player.Character then return end
+        return player.Character:FindFirstChild("HumanoidRootPart")
+    end
+
+    targetDropdown = PlayerSection:Dropdown({
+        Title = "选择目标玩家",
+        Values = getTargetNames(),
+        Value = getTargetNames()[1],
+        Callback = function(v)
+            selectedTargetName = v
+        end
+    })
+
+    PlayerSection:Button({
+        Title = "刷新目标列表",
+        Callback = function()
+            local names = getTargetNames()
+            if names[1] then selectedTargetName = selectedTargetName or names[1] end
+            pcall(function() targetDropdown:Refresh(names) end)
+        end
+    })
+
+    local flingPower = 180
+    PlayerSection:Slider({
+        Title = "甩飞力度",
+        Value = {Min = 50, Max = 500, Default = 180},
+        Step = 10,
+        Callback = function(v)
+            flingPower = tonumber(v) or 180
+        end
+    })
+
+    PlayerSection:Button({
+        Title = "💨 甩飞选中玩家",
+        Callback = function()
+            if not selectedTargetName then return end
+            local target = Players:FindFirstChild(selectedTargetName)
+            local targetRoot = getTargetRoot(target)
+            local _, _, myRoot = getCharacter()
+            if not targetRoot or not myRoot then return end
+
+            local delta = targetRoot.Position - myRoot.Position
+            local dir = delta.Magnitude > 0.1 and delta.Unit or Vector3.new(0, 0, -1)
+            pcall(function()
+                targetRoot.AssemblyLinearVelocity = dir * flingPower + Vector3.new(0, flingPower * 0.65, 0)
+                targetRoot.AssemblyAngularVelocity = Vector3.new(flingPower * 0.25, flingPower * 0.35, flingPower * 0.15)
+            end)
+        end
+    })
+
+    -- 🕳️ 黑洞：吸附附近未锚定物体；不会修改游戏服务端脚本或绕过检测。
+    local blackHole = {
+        enabled = false,
+        radius = 35,
+        strength = 85,
+        part = nil,
+        connection = nil
+    }
+
+    local function stopBlackHole()
+        blackHole.enabled = false
+        if blackHole.connection then
+            blackHole.connection:Disconnect()
+            blackHole.connection = nil
+        end
+        if blackHole.part then
+            pcall(function() blackHole.part:Destroy() end)
+            blackHole.part = nil
+        end
+    end
+
+    local function startBlackHole()
+        stopBlackHole()
+        local _, _, root = getCharacter()
+        if not root then return end
+
+        local hole = Instance.new("Part")
+        hole.Name = "AioveBlackHole"
+        hole.Shape = Enum.PartType.Ball
+        hole.Size = Vector3.new(3, 3, 3)
+        hole.Material = Enum.Material.Neon
+        hole.Transparency = 0.15
+        hole.Color = Color3.fromRGB(35, 0, 55)
+        hole.CanCollide = false
+        hole.Anchored = true
+        hole.CFrame = root.CFrame * CFrame.new(0, 0, -8)
+        hole.Parent = Workspace
+        blackHole.part = hole
+        blackHole.enabled = true
+
+        blackHole.connection = RunService.Heartbeat:Connect(function()
+            if not blackHole.enabled or not hole.Parent then
+                stopBlackHole()
+                return
+            end
+
+            local _, _, currentRoot = getCharacter()
+            if not currentRoot then
+                stopBlackHole()
+                return
+            end
+
+            hole.Position = currentRoot.Position + currentRoot.CFrame.LookVector * 8
+            local center = hole.Position
+
+            for _, obj in ipairs(Workspace:GetDescendants()) do
+                if obj:IsA("BasePart") and not obj.Anchored and obj ~= hole then
+                    local ownerCharacter = obj:FindFirstAncestorOfClass("Model")
+                    local isSelf = ownerCharacter == LocalPlayer.Character
+                    if not isSelf then
+                        local offset = center - obj.Position
+                        local distance = offset.Magnitude
+                        if distance > 1 and distance <= blackHole.radius then
+                            pcall(function()
+                                local pull = offset.Unit * math.clamp(blackHole.strength * (1 - distance / blackHole.radius), 8, blackHole.strength)
+                                obj.AssemblyLinearVelocity = obj.AssemblyLinearVelocity * 0.45 + pull
+                            end)
+                        end
+                    end
+                end
+            end
+        end)
+    end
+
+    PlayerSection:Toggle({
+        Title = "🕳️ 黑洞",
+        Default = false,
+        Callback = function(v)
+            if v then startBlackHole() else stopBlackHole() end
+        end
+    })
+
+    PlayerSection:Slider({
+        Title = "黑洞范围",
+        Value = {Min = 10, Max = 100, Default = 35},
+        Step = 5,
+        Callback = function(v)
+            blackHole.radius = tonumber(v) or 35
+        end
+    })
+
+    PlayerSection:Slider({
+        Title = "黑洞吸力",
+        Value = {Min = 20, Max = 250, Default = 85},
+        Step = 5,
+        Callback = function(v)
+            blackHole.strength = tonumber(v) or 85
+        end
+    })
+
+    -- 👻 远离式隐身：把真实角色暂时移到远处，并在原地保留一个本地视觉替身。
+    -- 这是实验性玩法功能，不用于绕过 Anti-Cheat / 检测系统。
+    local remoteInvisible = {
+        enabled = false,
+        distance = 10000,
+        originalCFrame = nil,
+        decoy = nil,
+        cameraType = nil,
+        cameraSubject = nil
+    }
+
+    local function destroyInvisibleDecoy()
+        if remoteInvisible.decoy then
+            pcall(function() remoteInvisible.decoy:Destroy() end)
+            remoteInvisible.decoy = nil
+        end
+    end
+
+    local function createInvisibleDecoy(character, cframe)
+        destroyInvisibleDecoy()
+        local oldArchivable = character.Archivable
+        local clone
+        pcall(function()
+            character.Archivable = true
+            clone = character:Clone()
+            character.Archivable = oldArchivable
+        end)
+        if not clone then
+            pcall(function() character.Archivable = oldArchivable end)
+            return
+        end
+
+        clone.Name = "AioveLocalInvisibleDecoy"
+        clone.Parent = Workspace
+        clone:PivotTo(cframe)
+
+        for _, obj in ipairs(clone:GetDescendants()) do
+            if obj:IsA("BasePart") then
+                obj.Anchored = true
+                obj.CanCollide = false
+                obj.CanTouch = false
+                obj.CanQuery = false
+            elseif obj:IsA("Script") or obj:IsA("LocalScript") or obj:IsA("ModuleScript") then
+                pcall(function() obj:Destroy() end)
+            elseif obj:IsA("Humanoid") then
+                obj.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+            end
+        end
+        remoteInvisible.decoy = clone
+    end
+
+    local function stopRemoteInvisible()
+        local _, _, root = getCharacter()
+        if root and remoteInvisible.originalCFrame then
+            pcall(function() root.CFrame = remoteInvisible.originalCFrame end)
+        end
+        local camera = Workspace.CurrentCamera
+        if camera then
+            pcall(function()
+                camera.CameraType = remoteInvisible.cameraType or Enum.CameraType.Custom
+                camera.CameraSubject = remoteInvisible.cameraSubject or getHumanoid()
+            end)
+        end
+        destroyInvisibleDecoy()
+        remoteInvisible.enabled = false
+        remoteInvisible.originalCFrame = nil
+    end
+
+    local function startRemoteInvisible()
+        stopRemoteInvisible()
+        local character, humanoid, root = getCharacter()
+        if not character or not humanoid or not root then return end
+
+        remoteInvisible.originalCFrame = root.CFrame
+        remoteInvisible.enabled = true
+        createInvisibleDecoy(character, root.CFrame)
+
+        local camera = Workspace.CurrentCamera
+        if camera then
+            remoteInvisible.cameraType = camera.CameraType
+            remoteInvisible.cameraSubject = camera.CameraSubject
+        end
+
+        root.CFrame = root.CFrame + Vector3.new(remoteInvisible.distance, 0, remoteInvisible.distance)
+
+        if remoteInvisible.decoy and camera then
+            pcall(function()
+                camera.CameraType = Enum.CameraType.Scriptable
+                camera.CFrame = remoteInvisible.decoy:GetPivot() * CFrame.new(0, 5, 12) * CFrame.Angles(math.rad(-12), math.pi, 0)
+            end)
+        end
+    end
+
+    PlayerSection:Paragraph({
+        Title = "👻 隐身说明",
+        Desc = "远离式隐身会把真实角色暂时移到很远的位置，并尝试在原地保留一个仅本地可见的视觉替身；不同游戏可能会限制该效果。"
+    })
+
+    PlayerSection:Toggle({
+        Title = "👻 远离式隐身",
+        Default = false,
+        Callback = function(v)
+            if v then startRemoteInvisible() else stopRemoteInvisible() end
+        end
+    })
+
+    PlayerSection:Slider({
+        Title = "隐身距离",
+        Value = {Min = 1000, Max = 30000, Default = 10000},
+        Step = 500,
+        Callback = function(v)
+            remoteInvisible.distance = tonumber(v) or 10000
+        end
+    })
+
+    -- 👁️ 视觉
+    local VisualSection = GeneralTab:Section({
+        Title = "👁️ 视觉",
+        Icon = "eye",
+        Opened = false,
+        Box = true
+    })
+
     local visual = {
         fullbright = false,
         noFog = false,
@@ -512,25 +1097,27 @@ local function createMainWindow()
         end
     end
 
-    GeneralTab:Toggle({
+    VisualSection:Toggle({
         Title = "FullBright",
-        Default = false,
+        Default = getSavedSetting("fullbright", false),
         Callback = function(v)
             visual.fullbright = v
+            rememberSetting("fullbright", v)
             applyVisual()
         end
     })
 
-    GeneralTab:Toggle({
+    VisualSection:Toggle({
         Title = "No Fog",
-        Default = false,
+        Default = getSavedSetting("noFog", false),
         Callback = function(v)
             visual.noFog = v
+            rememberSetting("noFog", v)
             applyVisual()
         end
     })
 
-    GeneralTab:Slider({
+    VisualSection:Slider({
         Title = "FOV",
         Value = {Min = 40, Max = 120, Default = 70},
         Step = 1,
@@ -540,19 +1127,24 @@ local function createMainWindow()
         end
     })
 
-    GeneralTab:Toggle({
+    VisualSection:Toggle({
         Title = "Infinite Zoom",
-        Default = false,
+        Default = getSavedSetting("infiniteZoom", false),
         Callback = function(v)
             visual.infiniteZoom = v
+            rememberSetting("infiniteZoom", v)
             applyVisual()
         end
     })
 
-    GeneralTab:Paragraph({
-        Title = "🔧 实用工具",
-        Desc = "通用功能"
+    -- 🛠️ 实用工具
+    local UtilitySection = GeneralTab:Section({
+        Title = "🛠️ 实用工具",
+        Icon = "wrench",
+        Opened = false,
+        Box = true
     })
+
     local utility = {
         instantInteract = false,
         antiAfk = false,
@@ -560,21 +1152,12 @@ local function createMainWindow()
         fpsBoost = false
     }
 
-    local function applyPromptState()
-        for _, obj in ipairs(Workspace:GetDescendants()) do
-            if obj:IsA("ProximityPrompt") then
-                pcall(function()
-                    obj.HoldDuration = utility.instantInteract and 0 or obj:GetAttribute("AioveOriginalHold") or obj.HoldDuration
-                end)
-            end
-        end
-    end
-
-    GeneralTab:Toggle({
+    UtilitySection:Toggle({
         Title = "Instant Interact",
-        Default = false,
+        Default = getSavedSetting("instantInteract", false),
         Callback = function(v)
             utility.instantInteract = v
+            rememberSetting("instantInteract", v)
             if v then
                 for _, obj in ipairs(Workspace:GetDescendants()) do
                     if obj:IsA("ProximityPrompt") then
@@ -595,23 +1178,25 @@ local function createMainWindow()
         end
     })
 
-    GeneralTab:Toggle({
+    UtilitySection:Toggle({
         Title = "Anti-AFK",
-        Default = false,
+        Default = getSavedSetting("antiAfk", false),
         Callback = function(v)
             utility.antiAfk = v
+            rememberSetting("antiAfk", v)
         end
     })
 
-    GeneralTab:Toggle({
+    UtilitySection:Toggle({
         Title = "Auto Clicker",
-        Default = false,
+        Default = getSavedSetting("autoClick", false),
         Callback = function(v)
             utility.autoClick = v
+            rememberSetting("autoClick", v)
         end
     })
 
-    GeneralTab:Toggle({
+    UtilitySection:Toggle({
         Title = "FPS Boost",
         Default = false,
         Callback = function(v)
@@ -632,7 +1217,7 @@ local function createMainWindow()
         end
     })
 
-    GeneralTab:Button({
+    UtilitySection:Button({
         Title = "重置角色",
         Callback = function()
             local h = getHumanoid()
@@ -640,21 +1225,7 @@ local function createMainWindow()
         end
     })
 
-    GeneralTab:Button({
-        Title = "重新加入当前服务器",
-        Callback = function()
-            TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
-        end
-    })
-
-    GeneralTab:Button({
-        Title = "重新加入游戏",
-        Callback = function()
-            TeleportService:Teleport(game.PlaceId, LocalPlayer)
-        end
-    })
-
-    GeneralTab:Button({
+    UtilitySection:Button({
         Title = "复制 JobId",
         Callback = function()
             pcall(function()
@@ -663,7 +1234,7 @@ local function createMainWindow()
         end
     })
 
-    GeneralTab:Button({
+    UtilitySection:Button({
         Title = "复制 PlaceId",
         Callback = function()
             pcall(function()
@@ -672,10 +1243,14 @@ local function createMainWindow()
         end
     })
 
-    GeneralTab:Paragraph({
-        Title = "📍 传送",
-        Desc = "通用功能"
+    -- 🚀 传送
+    local TeleportSection = GeneralTab:Section({
+        Title = "🚀 传送",
+        Icon = "map-pin",
+        Opened = false,
+        Box = true
     })
+
     local selectedPlayerName = nil
     local playerDropdown
 
@@ -690,7 +1265,7 @@ local function createMainWindow()
         return list
     end
 
-    playerDropdown = GeneralTab:Dropdown({
+    playerDropdown = TeleportSection:Dropdown({
         Title = "选择玩家",
         Values = getPlayerNames(),
         Value = getPlayerNames()[1],
@@ -699,7 +1274,7 @@ local function createMainWindow()
         end
     })
 
-    GeneralTab:Button({
+    TeleportSection:Button({
         Title = "刷新玩家列表",
         Callback = function()
             pcall(function()
@@ -708,18 +1283,18 @@ local function createMainWindow()
         end
     })
 
-    GeneralTab:Button({
+    TeleportSection:Button({
         Title = "传送到选中玩家",
         Callback = function()
             if not selectedPlayerName then return end
             local target = Players:FindFirstChild(selectedPlayerName)
             local _, _, root = getCharacter()
-            local _, _, targetRoot = target and (function()
-                local c = target.Character
-                local h = c and c:FindFirstChildOfClass("Humanoid")
-                local r = c and c:FindFirstChild("HumanoidRootPart")
-                return c, h, r
-            end)() or nil
+            local targetRoot
+
+            if target and target.Character then
+                targetRoot = target.Character:FindFirstChild("HumanoidRootPart")
+            end
+
             if root and targetRoot then
                 root.CFrame = targetRoot.CFrame + Vector3.new(0, 3, 0)
             end
@@ -728,7 +1303,7 @@ local function createMainWindow()
 
     local savedPosition
 
-    GeneralTab:Button({
+    TeleportSection:Button({
         Title = "保存当前位置",
         Callback = function()
             local _, _, root = getCharacter()
@@ -736,7 +1311,7 @@ local function createMainWindow()
         end
     })
 
-    GeneralTab:Button({
+    TeleportSection:Button({
         Title = "返回保存位置",
         Callback = function()
             local _, _, root = getCharacter()
@@ -744,14 +1319,108 @@ local function createMainWindow()
         end
     })
 
-    GeneralTab:Paragraph({
-        Title = "📊 状态",
-        Desc = "通用功能"
+    -- 📡 网络 / 服务器
+    local ServerSection = GeneralTab:Section({
+        Title = "📡 网络 / 服务器",
+        Icon = "radio",
+        Opened = false,
+        Box = true
     })
-    local statsParagraph = GeneralTab:Paragraph({
+
+    ServerSection:Button({
+        Title = "重新加入当前服务器",
+        Callback = function()
+            TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
+        end
+    })
+
+    ServerSection:Button({
+        Title = "重新加入游戏",
+        Callback = function()
+            TeleportService:Teleport(game.PlaceId, LocalPlayer)
+        end
+    })
+
+    local statsParagraph = ServerSection:Paragraph({
         Title = "运行状态",
         Desc = "FPS: --   Ping: --"
     })
+
+    -- 📊 状态
+    local StatusSection = GeneralTab:Section({
+        Title = "📊 状态",
+        Icon = "activity",
+        Opened = false,
+        Box = true
+    })
+
+    StatusSection:Paragraph({
+        Title = "当前玩家",
+        Desc = tostring(LocalPlayer.Name)
+    })
+
+    StatusSection:Paragraph({
+        Title = "当前服务器",
+        Desc = tostring(game.JobId ~= "" and game.JobId or "未知")
+    })
+
+    StatusSection:Paragraph({
+        Title = "当前游戏",
+        Desc = tostring(game.PlaceId)
+    })
+
+    -- =========================================================
+    -- 通用循环
+    -- =========================================================
+    UserInputService.JumpRequest:Connect(function()
+        if movement.infiniteJump then
+            local h = getHumanoid()
+            if h then
+                h:ChangeState(Enum.HumanoidStateType.Jumping)
+            end
+        end
+    end)
+
+    RunService.Stepped:Connect(function()
+        local c, h = getCharacter()
+        if not c or not h then return end
+
+        if movement.noclip then
+            for _, obj in ipairs(c:GetDescendants()) do
+                if obj:IsA("BasePart") then
+                    obj.CanCollide = false
+                end
+            end
+        end
+
+        if movement.bhop and h.MoveDirection.Magnitude > 0 then
+            h.Jump = true
+        end
+
+        if movement.speedEnabled or movement.jumpEnabled or movement.gravityEnabled or movement.sprint then
+            applyMovement()
+        end
+    end)
+
+    task.spawn(function()
+        while task.wait(0.08) do
+            if utility.autoClick then
+                pcall(function()
+                    if mouse1click then mouse1click() end
+                end)
+            end
+        end
+    end)
+
+    LocalPlayer.Idled:Connect(function()
+        if utility.antiAfk then
+            pcall(function()
+                VirtualUser:Button2Down(Vector2.new(0, 0), Workspace.CurrentCamera.CFrame)
+                task.wait(0.1)
+                VirtualUser:Button2Up(Vector2.new(0, 0), Workspace.CurrentCamera.CFrame)
+            end)
+        end
+    end)
 
     local frames = 0
     local lastFps = tick()
@@ -779,58 +1448,19 @@ local function createMainWindow()
         end
     end)
 
-    -- =========================================================
-    -- 通用循环
-    -- =========================================================
-    UserInputService.JumpRequest:Connect(function()
-        if movement.infiniteJump then
-            local h = getHumanoid()
-            if h then
-                h:ChangeState(Enum.HumanoidStateType.Jumping)
-            end
+    Players.LocalPlayer.CharacterAdded:Connect(function()
+        task.wait(0.5)
+        if movement.fly then
+            startFly()
         end
+        if carFlight.enabled then
+            startCarFlight()
+        end
+        applyMovement()
     end)
 
-    RunService.Stepped:Connect(function()
-        local c, h, root = getCharacter()
-        if not c or not h then return end
 
-        if movement.noclip then
-            for _, obj in ipairs(c:GetDescendants()) do
-                if obj:IsA("BasePart") then
-                    obj.CanCollide = false
-                end
-            end
-        end
-
-        if movement.bhop and h.MoveDirection.Magnitude > 0 then
-            h.Jump = true
-        end
-
-        if movement.speedEnabled or movement.jumpEnabled or movement.gravityEnabled or movement.sprint then
-            applyMovement()
-        end
-    end)
-
-    UserInputService.InputBegan:Connect(function(input, processed)
-        if processed then return end
-        if utility.autoClick and input.UserInputType == Enum.UserInputType.MouseButton1 then
-            -- 开启后由下面循环处理
-        end
-    end)
-
-    task.spawn(function()
-        while task.wait(0.08) do
-            if utility.autoClick then
-                pcall(function()
-                    if mouse1click then mouse1click() end
-                end)
-            end
-        end
-    end)
-
-    LocalPlayer.Idled:Connect(function()
-        if utility.antiAfk then
+ity.antiAfk then
             pcall(function()
                 VirtualUser:Button2Down(Vector2.new(0, 0), Workspace.CurrentCamera.CFrame)
                 task.wait(0.1)
@@ -846,6 +1476,7 @@ local function createMainWindow()
         end
         applyMovement()
     end)
+
 
     -- =========================================================
     -- 其他服务器脚本：只加载 01～65，不加载 99 圣奥里
