@@ -57,6 +57,17 @@ end
 local function createMainWindow()
     task.wait(0.8)
 
+    -- UI 随机背景图：只作用于 UI，不涉及游戏功能。
+    local BackgroundPool = {
+        "https://raw.githubusercontent.com/AioveCN/RobloxScriptsAiove/main/background/01.jpg",
+        "https://raw.githubusercontent.com/AioveCN/RobloxScriptsAiove/main/background/02.jpg",
+        "https://raw.githubusercontent.com/AioveCN/RobloxScriptsAiove/main/background/03.jpg",
+        "https://raw.githubusercontent.com/AioveCN/RobloxScriptsAiove/main/background/04.jpg"
+    }
+
+    local currentBackground = ""
+    local backgroundEnabled = false
+
     local Window = WindUI:CreateWindow({
         Title = "欢迎您的使用",
         Icon = "zap",
@@ -77,6 +88,34 @@ local function createMainWindow()
         Background = "",
         BackgroundImageTransparency = 0.4
     })
+
+    local function setRandomBackground(enabled)
+        backgroundEnabled = enabled
+        if not enabled then
+            currentBackground = ""
+            pcall(function()
+                Window:SetBackground("")
+            end)
+            return
+        end
+
+        if #BackgroundPool == 0 then return end
+
+        local nextBackground = BackgroundPool[math.random(1, #BackgroundPool)]
+        if #BackgroundPool > 1 then
+            local attempts = 0
+            while nextBackground == currentBackground and attempts < 5 do
+                nextBackground = BackgroundPool[math.random(1, #BackgroundPool)]
+                attempts += 1
+            end
+        end
+
+        currentBackground = nextBackground
+
+        pcall(function()
+            Window:SetBackground(nextBackground)
+        end)
+    end
 
     pcall(function()
         Window:EditOpenButton({
@@ -142,6 +181,38 @@ local function createMainWindow()
     InfoTab:Paragraph({
         Title = "说明",
         Desc = "本版本没有圣奥里功能；通用功能为独立通用工具。"
+    })
+
+    InfoTab:Paragraph({
+        Title = "🎨 UI 设置",
+        Desc = "这里仅修改 Aiove HUB 的界面外观。"
+    })
+
+    InfoTab:Toggle({
+        Title = "随机背景图",
+        Default = false,
+        Callback = function(v)
+            setRandomBackground(v)
+        end
+    })
+
+    InfoTab:Button({
+        Title = "更换随机背景",
+        Callback = function()
+            if backgroundEnabled then
+                setRandomBackground(true)
+            else
+                -- 即使开关关闭，也允许预览/切换；不会自动打开开关。
+                local wasEnabled = backgroundEnabled
+                setRandomBackground(true)
+                backgroundEnabled = wasEnabled
+            end
+        end
+    })
+
+    InfoTab:Paragraph({
+        Title = "背景说明",
+        Desc = "背景图片使用公开图片 URL；如果图片地址不可用，UI 本身仍可正常运行。"
     })
 
     -- =========================================================
