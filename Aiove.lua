@@ -114,12 +114,7 @@ local function createMainWindow()
     -- =========================================================
     -- 信息
     -- =========================================================
-    local MainSection = Window:Section({
-        Title = "功能",
-        Opened = true
-    })
-
-    local InfoTab = MainSection:Tab({
+    local InfoTab = Window:Tab({
         Title = "信息",
         Icon = "info"
     })
@@ -156,7 +151,7 @@ local function createMainWindow()
     -- =========================================================
     -- 通用
     -- =========================================================
-    local GeneralTab = MainSection:Tab({
+    local GeneralTab = Window:Tab({
         Title = "通用",
         Icon = "settings"
     })
@@ -783,7 +778,7 @@ local function createMainWindow()
     -- =========================================================
     -- 其他服务器脚本：只加载 01～65，不加载 99 圣奥里
     -- =========================================================
-    local OtherTab = MainSection:Tab({
+    local OtherTab = Window:Tab({
         Title = "其他服务器脚本",
         Icon = "sliders-h"
     })
