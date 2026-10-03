@@ -335,7 +335,7 @@ local function createMainWindow()
     })
 
     -- =========================================================
-    -- 通用：使用可折叠 Section 分组，点击标题展开/收起
+    -- 通用：直接显示功能分组，不使用可折叠 Section
     -- =========================================================
     local GeneralTab = Window:Tab({
         Title = "通用",
@@ -392,12 +392,10 @@ local function createMainWindow()
     end
 
     -- 🏃 跑步
-    local RunSection = GeneralTab:Section({
-        Title = "🏃 跑步",
-        Opened = false
-    })
+    GeneralTab:Paragraph({Title = "🏃 跑步", Desc = "本组功能直接显示，无折叠。"})
+    local RunSection = GeneralTab
 
-    RunSection:Toggle({
+    GeneralTab:Toggle({
         Title = "WalkSpeed",
         Default = getSavedSetting("speedEnabled", false),
         Callback = function(v)
@@ -415,7 +413,7 @@ local function createMainWindow()
         end
     })
 
-    RunSection:Slider({
+    GeneralTab:Slider({
         Title = "WalkSpeed 数值",
         Value = {Min = 16, Max = 200, Default = tonumber(getSavedSetting("speed", 16)) or 16},
         Step = 1,
@@ -429,7 +427,7 @@ local function createMainWindow()
         end
     })
 
-    RunSection:Toggle({
+    GeneralTab:Toggle({
         Title = "Sprint",
         Default = false,
         Callback = function(v)
@@ -446,7 +444,7 @@ local function createMainWindow()
         end
     })
 
-    RunSection:Toggle({
+    GeneralTab:Toggle({
         Title = "Noclip",
         Default = getSavedSetting("noclip", false),
         Callback = function(v)
@@ -456,12 +454,10 @@ local function createMainWindow()
     })
 
     -- 🦘 跳跃
-    local JumpSection = GeneralTab:Section({
-        Title = "🦘 跳跃",
-        Opened = false
-    })
+    GeneralTab:Paragraph({Title = "🦘 跳跃", Desc = "本组功能直接显示，无折叠。"})
+    local JumpSection = GeneralTab
 
-    JumpSection:Toggle({
+    GeneralTab:Toggle({
         Title = "跳跃控制",
         Default = false,
         Callback = function(v)
@@ -470,7 +466,7 @@ local function createMainWindow()
         end
     })
 
-    JumpSection:Slider({
+    GeneralTab:Slider({
         Title = "JumpPower",
         Value = {Min = 25, Max = 200, Default = 50},
         Step = 1,
@@ -480,7 +476,7 @@ local function createMainWindow()
         end
     })
 
-    JumpSection:Toggle({
+    GeneralTab:Toggle({
         Title = "无限跳跃",
         Default = getSavedSetting("infiniteJump", false),
         Callback = function(v)
@@ -489,7 +485,7 @@ local function createMainWindow()
         end
     })
 
-    JumpSection:Toggle({
+    GeneralTab:Toggle({
         Title = "Bhop",
         Default = getSavedSetting("bhop", false),
         Callback = function(v)
@@ -498,7 +494,7 @@ local function createMainWindow()
         end
     })
 
-    JumpSection:Slider({
+    GeneralTab:Slider({
         Title = "Gravity",
         Value = {Min = 10, Max = 196, Default = 196},
         Step = 1,
@@ -510,7 +506,7 @@ local function createMainWindow()
         end
     })
 
-    JumpSection:Toggle({
+    GeneralTab:Toggle({
         Title = "自定义 Gravity",
         Default = false,
         Callback = function(v)
@@ -520,10 +516,8 @@ local function createMainWindow()
     })
 
     -- 🕊️ 飞行
-    local FlySection = GeneralTab:Section({
-        Title = "🕊️ 飞行",
-        Opened = false
-    })
+    GeneralTab:Paragraph({Title = "🕊️ 飞行", Desc = "本组功能直接显示，无折叠。"})
+    local FlySection = GeneralTab
 
     local flyVelocity
     local flyConnection
@@ -570,7 +564,7 @@ local function createMainWindow()
         end)
     end
 
-    FlySection:Toggle({
+    GeneralTab:Toggle({
         Title = "Fly",
         Default = getSavedSetting("fly", false),
         Callback = function(v)
@@ -580,7 +574,7 @@ local function createMainWindow()
         end
     })
 
-    FlySection:Slider({
+    GeneralTab:Slider({
         Title = "Fly Speed",
         Value = {Min = 10, Max = 200, Default = 60},
         Step = 1,
@@ -590,10 +584,8 @@ local function createMainWindow()
     })
 
     -- 🚗 飞车：仅作用于自己当前驾驶/乘坐的 VehicleSeat
-    local CarSection = GeneralTab:Section({
-        Title = "🚗 飞车",
-        Opened = false
-    })
+    GeneralTab:Paragraph({Title = "🚗 飞车", Desc = "本组功能直接显示，无折叠。"})
+    local CarSection = GeneralTab
 
     local carFlight = {
         enabled = false,
@@ -703,12 +695,12 @@ local function createMainWindow()
         end)
     end
 
-    CarSection:Paragraph({
+    GeneralTab:Paragraph({
         Title = "使用说明",
         Desc = "先坐进 VehicleSeat，再开启飞车。W/S、方向控制由载具座椅提供；Space 上升、Shift 下降。"
     })
 
-    CarSection:Toggle({
+    GeneralTab:Toggle({
         Title = "飞车",
         Default = getSavedSetting("carFlight", false),
         Callback = function(v)
@@ -722,7 +714,7 @@ local function createMainWindow()
         end
     })
 
-    CarSection:Slider({
+    GeneralTab:Slider({
         Title = "飞车速度",
         Value = {Min = 20, Max = 250, Default = 80},
         Step = 5,
@@ -731,7 +723,7 @@ local function createMainWindow()
         end
     })
 
-    CarSection:Slider({
+    GeneralTab:Slider({
         Title = "升降速度",
         Value = {Min = 20, Max = 150, Default = 55},
         Step = 5,
@@ -740,147 +732,9 @@ local function createMainWindow()
         end
     })
 
-    -- 🧍 玩家功能 / 甩飞 / 黑洞 / 远离式隐身
-    local PlayerSection = GeneralTab:Section({
-        Title = "🧍 玩家功能",
-        Opened = false
-    })
-
-    local flingPower = 180
-    PlayerSection:Slider({
-        Title = "甩飞力度",
-        Value = {Min = 50, Max = 500, Default = 180},
-        Step = 10,
-        Callback = function(v)
-            flingPower = tonumber(v) or 180
-        end
-    })
-
-    PlayerSection:Button({
-        Title = "💨 自己甩飞",
-        Callback = function()
-            local _, _, myRoot = getCharacter()
-            if not myRoot then return end
-            pcall(function()
-                myRoot.AssemblyLinearVelocity = Vector3.new(0, flingPower * 0.65, 0)
-                myRoot.AssemblyAngularVelocity = Vector3.new(flingPower * 0.25, flingPower * 0.35, flingPower * 0.15)
-            end)
-        end
-    })
-
-    PlayerSection:Paragraph({
-        Title = "甩飞说明",
-        Desc = "当前版本只对自己的角色施加物理效果，避免直接干扰其他玩家。"
-    })
-
-    -- 🕳️ 黑洞：本地物理演示，仅吸附 Aiove 创建的演示物体。
-    local blackHole = {
-        enabled = false,
-        radius = 35,
-        strength = 85,
-        part = nil,
-        folder = nil,
-        connection = nil
-    }
-
-    local function stopBlackHole()
-        blackHole.enabled = false
-        if blackHole.connection then
-            blackHole.connection:Disconnect()
-            blackHole.connection = nil
-        end
-        if blackHole.folder then
-            pcall(function() blackHole.folder:Destroy() end)
-            blackHole.folder = nil
-        end
-        blackHole.part = nil
-    end
-
-    local function startBlackHole()
-        stopBlackHole()
-        local _, _, root = getCharacter()
-        if not root then return end
-
-        local folder = Instance.new("Folder")
-        folder.Name = "AioveBlackHoleDemo"
-        folder.Parent = Workspace
-        blackHole.folder = folder
-
-        local hole = Instance.new("Part")
-        hole.Name = "AioveBlackHole"
-        hole.Shape = Enum.PartType.Ball
-        hole.Size = Vector3.new(3, 3, 3)
-        hole.Material = Enum.Material.Neon
-        hole.Transparency = 0.15
-        hole.Color = Color3.fromRGB(35, 0, 55)
-        hole.CanCollide = false
-        hole.Anchored = true
-        hole.CFrame = root.CFrame * CFrame.new(0, 0, -8)
-        hole.Parent = folder
-        blackHole.part = hole
-        blackHole.enabled = true
-
-        for i = 1, 10 do
-            local demo = Instance.new("Part")
-            demo.Name = "AioveBlackHoleObject"
-            demo.Size = Vector3.new(1.5, 1.5, 1.5)
-            demo.Material = Enum.Material.Neon
-            demo.CFrame = hole.CFrame * CFrame.new(math.random(-20,20), math.random(-10,10), math.random(-20,20))
-            demo.Parent = folder
-        end
-
-        blackHole.connection = RunService.Heartbeat:Connect(function()
-            if not blackHole.enabled or not hole.Parent then
-                stopBlackHole()
-                return
-            end
-            local _, _, currentRoot = getCharacter()
-            if not currentRoot then
-                stopBlackHole()
-                return
-            end
-            hole.Position = currentRoot.Position + currentRoot.CFrame.LookVector * 8
-            local center = hole.Position
-            for _, obj in ipairs(folder:GetChildren()) do
-                if obj:IsA("BasePart") and obj ~= hole then
-                    local offset = center - obj.Position
-                    local distance = offset.Magnitude
-                    if distance > 1 and distance <= blackHole.radius then
-                        pcall(function()
-                            local pull = offset.Unit * math.clamp(blackHole.strength * (1 - distance / blackHole.radius), 8, blackHole.strength)
-                            obj.AssemblyLinearVelocity = obj.AssemblyLinearVelocity * 0.45 + pull
-                        end)
-                    end
-                end
-            end
-        end)
-    end
-
-    PlayerSection:Toggle({
-        Title = "🕳️ 黑洞（本地演示）",
-        Default = false,
-        Callback = function(v)
-            if v then startBlackHole() else stopBlackHole() end
-        end
-    })
-
-    PlayerSection:Slider({
-        Title = "黑洞范围",
-        Value = {Min = 10, Max = 100, Default = 35},
-        Step = 5,
-        Callback = function(v)
-            blackHole.radius = tonumber(v) or 35
-        end
-    })
-
-    PlayerSection:Slider({
-        Title = "黑洞吸力",
-        Value = {Min = 20, Max = 250, Default = 85},
-        Step = 5,
-        Callback = function(v)
-            blackHole.strength = tonumber(v) or 85
-        end
-    })
+    -- 👻 玩家位置功能
+    GeneralTab:Paragraph({Title = "👻 玩家位置", Desc = "本组功能直接显示，无折叠。"})
+    local PlayerSection = GeneralTab
 
     -- 👻 远离式位置测试：仅移动自己的角色到远处并提供恢复按钮。
     -- 不创建替身、不用于规避检测或隐藏真实角色。
@@ -910,12 +764,12 @@ local function createMainWindow()
         root.CFrame = root.CFrame + Vector3.new(remotePositionTest.distance, 0, remotePositionTest.distance)
     end
 
-    PlayerSection:Paragraph({
+    GeneralTab:Paragraph({
         Title = "👻 远离式位置测试",
         Desc = "仅移动你自己的角色到远处；可恢复原位置，不创建本地替身，也不用于规避检测。"
     })
 
-    PlayerSection:Toggle({
+    GeneralTab:Toggle({
         Title = "👻 远离式位置测试",
         Default = false,
         Callback = function(v)
@@ -923,7 +777,7 @@ local function createMainWindow()
         end
     })
 
-    PlayerSection:Slider({
+    GeneralTab:Slider({
         Title = "移动距离",
         Value = {Min = 1000, Max = 30000, Default = 10000},
         Step = 500,
@@ -932,16 +786,14 @@ local function createMainWindow()
         end
     })
 
-    PlayerSection:Button({
+    GeneralTab:Button({
         Title = "恢复原位置",
         Callback = restoreRemotePositionTest
     })
 
     -- 👁️ 视觉
-    local VisualSection = GeneralTab:Section({
-        Title = "👁️ 视觉",
-        Opened = false
-    })
+    GeneralTab:Paragraph({Title = "👁️ 视觉", Desc = "本组功能直接显示，无折叠。"})
+    local VisualSection = GeneralTab
 
     local visual = {
         fullbright = false,
@@ -991,7 +843,7 @@ local function createMainWindow()
         end
     end
 
-    VisualSection:Toggle({
+    GeneralTab:Toggle({
         Title = "FullBright",
         Default = getSavedSetting("fullbright", false),
         Callback = function(v)
@@ -1001,7 +853,7 @@ local function createMainWindow()
         end
     })
 
-    VisualSection:Toggle({
+    GeneralTab:Toggle({
         Title = "No Fog",
         Default = getSavedSetting("noFog", false),
         Callback = function(v)
@@ -1011,7 +863,7 @@ local function createMainWindow()
         end
     })
 
-    VisualSection:Slider({
+    GeneralTab:Slider({
         Title = "FOV",
         Value = {Min = 40, Max = 120, Default = 70},
         Step = 1,
@@ -1021,7 +873,7 @@ local function createMainWindow()
         end
     })
 
-    VisualSection:Toggle({
+    GeneralTab:Toggle({
         Title = "Infinite Zoom",
         Default = getSavedSetting("infiniteZoom", false),
         Callback = function(v)
@@ -1032,10 +884,8 @@ local function createMainWindow()
     })
 
     -- 🛠️ 实用工具
-    local UtilitySection = GeneralTab:Section({
-        Title = "🛠️ 实用工具",
-        Opened = false
-    })
+    GeneralTab:Paragraph({Title = "🛠️ 实用工具", Desc = "本组功能直接显示，无折叠。"})
+    local UtilitySection = GeneralTab
 
     local utility = {
         instantInteract = false,
@@ -1044,7 +894,7 @@ local function createMainWindow()
         fpsBoost = false
     }
 
-    UtilitySection:Toggle({
+    GeneralTab:Toggle({
         Title = "Instant Interact",
         Default = getSavedSetting("instantInteract", false),
         Callback = function(v)
@@ -1070,7 +920,7 @@ local function createMainWindow()
         end
     })
 
-    UtilitySection:Toggle({
+    GeneralTab:Toggle({
         Title = "Anti-AFK",
         Default = getSavedSetting("antiAfk", false),
         Callback = function(v)
@@ -1079,7 +929,7 @@ local function createMainWindow()
         end
     })
 
-    UtilitySection:Toggle({
+    GeneralTab:Toggle({
         Title = "Auto Clicker",
         Default = getSavedSetting("autoClick", false),
         Callback = function(v)
@@ -1088,7 +938,7 @@ local function createMainWindow()
         end
     })
 
-    UtilitySection:Toggle({
+    GeneralTab:Toggle({
         Title = "FPS Boost",
         Default = false,
         Callback = function(v)
@@ -1109,7 +959,7 @@ local function createMainWindow()
         end
     })
 
-    UtilitySection:Button({
+    GeneralTab:Button({
         Title = "重置角色",
         Callback = function()
             local h = getHumanoid()
@@ -1117,7 +967,7 @@ local function createMainWindow()
         end
     })
 
-    UtilitySection:Button({
+    GeneralTab:Button({
         Title = "复制 JobId",
         Callback = function()
             pcall(function()
@@ -1126,7 +976,7 @@ local function createMainWindow()
         end
     })
 
-    UtilitySection:Button({
+    GeneralTab:Button({
         Title = "复制 PlaceId",
         Callback = function()
             pcall(function()
@@ -1136,10 +986,8 @@ local function createMainWindow()
     })
 
     -- 🚀 传送
-    local TeleportSection = GeneralTab:Section({
-        Title = "🚀 传送",
-        Opened = false
-    })
+    GeneralTab:Paragraph({Title = "🚀 传送", Desc = "本组功能直接显示，无折叠。"})
+    local TeleportSection = GeneralTab
 
     local selectedPlayerName = nil
     local playerDropdown
@@ -1155,7 +1003,7 @@ local function createMainWindow()
         return list
     end
 
-    playerDropdown = TeleportSection:Dropdown({
+    playerDropdown = GeneralTab:Dropdown({
         Title = "选择玩家",
         Values = getPlayerNames(),
         Value = getPlayerNames()[1],
@@ -1164,7 +1012,7 @@ local function createMainWindow()
         end
     })
 
-    TeleportSection:Button({
+    GeneralTab:Button({
         Title = "刷新玩家列表",
         Callback = function()
             pcall(function()
@@ -1173,7 +1021,7 @@ local function createMainWindow()
         end
     })
 
-    TeleportSection:Button({
+    GeneralTab:Button({
         Title = "传送到选中玩家",
         Callback = function()
             if not selectedPlayerName then return end
@@ -1193,7 +1041,7 @@ local function createMainWindow()
 
     local savedPosition
 
-    TeleportSection:Button({
+    GeneralTab:Button({
         Title = "保存当前位置",
         Callback = function()
             local _, _, root = getCharacter()
@@ -1201,7 +1049,7 @@ local function createMainWindow()
         end
     })
 
-    TeleportSection:Button({
+    GeneralTab:Button({
         Title = "返回保存位置",
         Callback = function()
             local _, _, root = getCharacter()
@@ -1210,47 +1058,43 @@ local function createMainWindow()
     })
 
     -- 📡 网络 / 服务器
-    local ServerSection = GeneralTab:Section({
-        Title = "📡 网络 / 服务器",
-        Opened = false
-    })
+    GeneralTab:Paragraph({Title = "📡 网络 / 服务器", Desc = "本组功能直接显示，无折叠。"})
+    local ServerSection = GeneralTab
 
-    ServerSection:Button({
+    GeneralTab:Button({
         Title = "重新加入当前服务器",
         Callback = function()
             TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
         end
     })
 
-    ServerSection:Button({
+    GeneralTab:Button({
         Title = "重新加入游戏",
         Callback = function()
             TeleportService:Teleport(game.PlaceId, LocalPlayer)
         end
     })
 
-    local statsParagraph = ServerSection:Paragraph({
+    local statsParagraph = GeneralTab:Paragraph({
         Title = "运行状态",
         Desc = "FPS: --   Ping: --"
     })
 
     -- 📊 状态
-    local StatusSection = GeneralTab:Section({
-        Title = "📊 状态",
-        Opened = false
-    })
+    GeneralTab:Paragraph({Title = "📊 状态", Desc = "本组功能直接显示，无折叠。"})
+    local StatusSection = GeneralTab
 
-    StatusSection:Paragraph({
+    GeneralTab:Paragraph({
         Title = "当前玩家",
         Desc = tostring(LocalPlayer.Name)
     })
 
-    StatusSection:Paragraph({
+    GeneralTab:Paragraph({
         Title = "当前服务器",
         Desc = tostring(game.JobId ~= "" and game.JobId or "未知")
     })
 
-    StatusSection:Paragraph({
+    GeneralTab:Paragraph({
         Title = "当前游戏",
         Desc = tostring(game.PlaceId)
     })
