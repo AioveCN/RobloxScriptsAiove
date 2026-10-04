@@ -1722,7 +1722,7 @@ local playerQuickButton
 local playerQuickUpButton
 local playerQuickDownButton
 local playerQuickPanelVertical = 0
-local playerQuickShown = true
+local playerQuickShown = false
 local noclipQuickShown = false
 local noclipQuickGui, noclipQuickButton, noclipQuickRainbow
 local noclipQuickPos = UDim2.new(0, 20, 0.5, 45)
