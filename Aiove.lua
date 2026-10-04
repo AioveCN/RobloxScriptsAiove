@@ -524,8 +524,8 @@ local function createMainWindow()
         -- 尺寸缩小到更接近你截图里的手机飞行面板。
         local frame = Instance.new("Frame")
         frame.Name = "FlyPanel"
-        frame.Size = UDim2.fromOffset(300, 116)
-        frame.Position = UDim2.new(0.5, -150, 0, 90)
+        frame.Size = UDim2.fromOffset(250, 96)
+        frame.Position = UDim2.new(0.5, -125, 0, 90)
         frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
         frame.BackgroundTransparency = 0.08
         frame.BorderSizePixel = 1
@@ -534,23 +534,23 @@ local function createMainWindow()
 
         local titleBar = Instance.new("TextButton")
         titleBar.Name = "DragHandle"
-        titleBar.Size = UDim2.new(1, -72, 0, 30)
+        titleBar.Size = UDim2.new(1, -58, 0, 24)
         titleBar.Position = UDim2.fromOffset(0, 0)
         titleBar.BackgroundTransparency = 1
         titleBar.Text = "飞行 V3"
         titleBar.TextColor3 = Color3.fromRGB(255, 255, 255)
-        titleBar.TextSize = 18
+        titleBar.TextSize = 15
         titleBar.Font = Enum.Font.SourceSansBold
         titleBar.TextXAlignment = Enum.TextXAlignment.Left
         titleBar.Parent = frame
 
         local close = Instance.new("TextButton")
-        close.Size = UDim2.fromOffset(68, 28)
-        close.Position = UDim2.new(1, -70, 0, 1)
+        close.Size = UDim2.fromOffset(56, 23)
+        close.Position = UDim2.new(1, -58, 0, 1)
         close.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
         close.Text = "X Aiove"
         close.TextColor3 = Color3.fromRGB(255, 255, 255)
-        close.TextSize = 13
+        close.TextSize = 11
         close.Font = Enum.Font.SourceSansBold
         close.Parent = frame
         close.Activated:Connect(function()
@@ -596,13 +596,13 @@ local function createMainWindow()
             end
         end)
 
-        local up = makeFlyButton(frame, "上升", UDim2.fromOffset(4, 34), UDim2.fromOffset(68, 36))
-        local plus = makeFlyButton(frame, "+速度", UDim2.fromOffset(76, 34), UDim2.fromOffset(68, 36))
-        local toggle = makeFlyButton(frame, "飞行 V3", UDim2.fromOffset(148, 34), UDim2.fromOffset(68, 36))
-        local speedLabel = makeFlyButton(frame, tostring(flySpeed), UDim2.fromOffset(220, 34), UDim2.fromOffset(76, 36))
-        local down = makeFlyButton(frame, "下降", UDim2.fromOffset(4, 74), UDim2.fromOffset(68, 36))
-        local minus = makeFlyButton(frame, "-速度", UDim2.fromOffset(76, 74), UDim2.fromOffset(68, 36))
-        local status = makeFlyButton(frame, "飞行关闭", UDim2.fromOffset(148, 74), UDim2.fromOffset(148, 36))
+        local up = makeFlyButton(frame, "上升", UDim2.fromOffset(3, 27), UDim2.fromOffset(55, 28))
+        local plus = makeFlyButton(frame, "+速度", UDim2.fromOffset(61, 27), UDim2.fromOffset(55, 28))
+        local toggle = makeFlyButton(frame, "飞行 V3", UDim2.fromOffset(119, 27), UDim2.fromOffset(60, 28))
+        local speedLabel = makeFlyButton(frame, tostring(flySpeed), UDim2.fromOffset(182, 27), UDim2.fromOffset(65, 28))
+        local down = makeFlyButton(frame, "下降", UDim2.fromOffset(3, 59), UDim2.fromOffset(55, 28))
+        local minus = makeFlyButton(frame, "-速度", UDim2.fromOffset(61, 59), UDim2.fromOffset(55, 28))
+        local status = makeFlyButton(frame, "飞行关闭", UDim2.fromOffset(119, 59), UDim2.fromOffset(128, 28))
 
         local function refresh()
             speedLabel.Text = tostring(flySpeed)
@@ -879,10 +879,12 @@ local function createMainWindow()
         return list
     end
 
+    local initialPlayerNames = getPlayerNames()
+    selectedPlayerName = initialPlayerNames[1]
     playerDropdown = GeneralTab:Dropdown({
         Title = "选择玩家",
-        Values = getPlayerNames(),
-        Value = getPlayerNames()[1],
+        Values = initialPlayerNames,
+        Value = selectedPlayerName,
         Callback = function(v)
             selectedPlayerName = v
         end
@@ -898,21 +900,77 @@ local function createMainWindow()
     })
 
     GeneralTab:Button({
-        Title = "传送到选中玩家",
+        Title = "传送到选中玩家身边",
         Callback = function()
-            if not selectedPlayerName then return end
-            local target = Players:FindFirstChild(selectedPlayerName)
+            local target = selectedPlayerName and Players:FindFirstChild(selectedPlayerName)
             local _, _, root = getCharacter()
-            local _, _, targetRoot = target and (function()
-                local c = target.Character
-                local h = c and c:FindFirstChildOfClass("Humanoid")
-                local r = c and c:FindFirstChild("HumanoidRootPart")
-                return c, h, r
-            end)() or nil
-            if root and targetRoot then
-                root.CFrame = targetRoot.CFrame + Vector3.new(0, 3, 0)
-            end
+            local targetCharacter = target and target.Character
+            local targetRoot = targetCharacter and targetCharacter:FindFirstChild("HumanoidRootPart")
+            if not root or not targetRoot then return end
+
+            -- 参考开源传送脚本的核心思路：以目标 HumanoidRootPart 为基准，增加一个安全偏移。
+            local offset = targetRoot.CFrame.RightVector * 3 + Vector3.new(0, 2.5, 0)
+            local destination = targetRoot.Position + offset
+            pcall(function()
+                root.CFrame = CFrame.new(destination, targetRoot.Position)
+            end)
         end
+    })
+
+    GeneralTab:Button({
+        Title = "传送到选中玩家前方",
+        Callback = function()
+            local target = selectedPlayerName and Players:FindFirstChild(selectedPlayerName)
+            local _, _, root = getCharacter()
+            local targetCharacter = target and target.Character
+            local targetRoot = targetCharacter and targetCharacter:FindFirstChild("HumanoidRootPart")
+            if not root or not targetRoot then return end
+            local destination = targetRoot.Position + targetRoot.CFrame.LookVector * 5 + Vector3.new(0, 2, 0)
+            pcall(function()
+                root.CFrame = CFrame.new(destination, targetRoot.Position)
+            end)
+        end
+    })
+
+    -- 甩飞：参考公开 Roblox Fling 项目的“选定目标 + 物理冲量”思路。
+    -- 不包含 Anti-Cheat 绕过或检测规避。不同游戏的网络所有权可能导致效果不同。
+    local flingPower = 180
+    local flingBusy = false
+
+    local function flingSelectedPlayer()
+        if flingBusy then return end
+        local target = selectedPlayerName and Players:FindFirstChild(selectedPlayerName)
+        local _, _, root = getCharacter()
+        local targetCharacter = target and target.Character
+        local targetRoot = targetCharacter and targetCharacter:FindFirstChild("HumanoidRootPart")
+        if not root or not targetRoot or target == LocalPlayer then return end
+
+        flingBusy = true
+        pcall(function()
+            -- 短暂靠近目标，然后给目标角色一个朝外的瞬时速度。
+            local away = targetRoot.Position - root.Position
+            if away.Magnitude < 0.1 then away = Vector3.new(0, 0, -1) end
+            away = away.Unit
+            root.CFrame = CFrame.new(targetRoot.Position - away * 4 + Vector3.new(0, 1.5, 0), targetRoot.Position)
+            targetRoot.AssemblyLinearVelocity = away * flingPower + Vector3.new(0, flingPower * 0.65, 0)
+            targetRoot.AssemblyAngularVelocity = Vector3.new(flingPower * 0.15, flingPower * 0.15, flingPower * 0.15)
+        end)
+        task.delay(0.25, function() flingBusy = false end)
+    end
+
+    GeneralTab:Paragraph({
+        Title = "💨 甩飞",
+        Desc = "选中玩家后尝试施加物理甩飞效果。"
+    })
+    GeneralTab:Slider({
+        Title = "甩飞力度",
+        Value = {Min = 50, Max = 500, Default = 180},
+        Step = 10,
+        Callback = function(v) flingPower = tonumber(v) or 180 end
+    })
+    GeneralTab:Button({
+        Title = "甩飞选中玩家",
+        Callback = flingSelectedPlayer
     })
 
     local savedPosition
