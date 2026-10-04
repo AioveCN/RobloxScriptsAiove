@@ -389,13 +389,22 @@ local function createMainWindow()
     })
 
     GeneralTab:Paragraph({
-        Title = "🕊 飞行",
-        Desc = "通用功能"
+        Title = "🕊 飞行 V3",
+        Desc = "手机触控版飞行控制器"
     })
+
     local flyVelocity
     local flyConnection
+    local flyGui
+    local flyUp = false
+    local flyDown = false
+    local flySpeed = 60
+    local flyEnabled = false
 
     local function stopFly()
+        flyEnabled = false
+        flyUp = false
+        flyDown = false
         if flyConnection then
             flyConnection:Disconnect()
             flyConnection = nil
@@ -408,8 +417,12 @@ local function createMainWindow()
 
     local function startFly()
         stopFly()
+        flyEnabled = true
         local _, _, root = getCharacter()
-        if not root then return end
+        if not root then
+            flyEnabled = false
+            return
+        end
 
         flyVelocity = Instance.new("BodyVelocity")
         flyVelocity.MaxForce = Vector3.new(1e6, 1e6, 1e6)
@@ -417,7 +430,7 @@ local function createMainWindow()
         flyVelocity.Parent = root
 
         flyConnection = RunService.RenderStepped:Connect(function()
-            if not movement.fly or not root.Parent then
+            if not flyEnabled or not root.Parent then
                 stopFly()
                 return
             end
@@ -426,32 +439,137 @@ local function createMainWindow()
             if not cam then return end
 
             local dir = Vector3.zero
+            if flyUp then dir += Vector3.yAxis end
+            if flyDown then dir -= Vector3.yAxis end
             if UserInputService:IsKeyDown(Enum.KeyCode.W) then dir += cam.CFrame.LookVector end
             if UserInputService:IsKeyDown(Enum.KeyCode.S) then dir -= cam.CFrame.LookVector end
             if UserInputService:IsKeyDown(Enum.KeyCode.A) then dir -= cam.CFrame.RightVector end
             if UserInputService:IsKeyDown(Enum.KeyCode.D) then dir += cam.CFrame.RightVector end
-            if UserInputService:IsKeyDown(Enum.KeyCode.Space) then dir += Vector3.yAxis end
-            if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then dir -= Vector3.yAxis end
 
-            flyVelocity.Velocity = dir.Magnitude > 0 and dir.Unit * movement.flySpeed or Vector3.zero
+            flyVelocity.Velocity = dir.Magnitude > 0 and dir.Unit * flySpeed or Vector3.zero
         end)
     end
 
-    GeneralTab:Toggle({
-        Title = "Fly",
-        Default = false,
-        Callback = function(v)
-            movement.fly = v
-            if v then startFly() else stopFly() end
-        end
-    })
+    local function makeFlyButton(parent, text, position, size)
+        local b = Instance.new("TextButton")
+        b.Name = text:gsub("%s+", "")
+        b.Size = size
+        b.Position = position
+        b.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+        b.BackgroundTransparency = 0.05
+        b.BorderSizePixel = 1
+        b.BorderColor3 = Color3.fromRGB(120, 120, 120)
+        b.Text = text
+        b.TextColor3 = Color3.fromRGB(255, 255, 255)
+        b.TextScaled = true
+        b.Font = Enum.Font.SourceSansBold
+        b.AutoButtonColor = true
+        b.Parent = parent
+        return b
+    end
 
-    GeneralTab:Slider({
-        Title = "Fly Speed",
-        Value = {Min = 10, Max = 200, Default = 60},
-        Step = 1,
-        Callback = function(v)
-            movement.flySpeed = tonumber(v) or 60
+    local function createFlyGui()
+        if flyGui and flyGui.Parent then
+            flyGui.Enabled = true
+            return
+        end
+
+        local playerGui = LocalPlayer:FindFirstChildOfClass("PlayerGui")
+        if not playerGui then return end
+
+        local gui = Instance.new("ScreenGui")
+        gui.Name = "AioveFlyV3"
+        gui.ResetOnSpawn = false
+        gui.IgnoreGuiInset = true
+        gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+        gui.Parent = playerGui
+        flyGui = gui
+
+        local frame = Instance.new("Frame")
+        frame.Name = "FlyPanel"
+        frame.Size = UDim2.fromOffset(380, 150)
+        frame.Position = UDim2.new(0.5, -190, 0, 90)
+        frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+        frame.BackgroundTransparency = 0.08
+        frame.BorderSizePixel = 1
+        frame.BorderColor3 = Color3.fromRGB(110, 110, 110)
+        frame.Parent = gui
+
+        local title = Instance.new("TextLabel")
+        title.Size = UDim2.new(1, -90, 0, 38)
+        title.Position = UDim2.fromOffset(10, 0)
+        title.BackgroundTransparency = 1
+        title.Text = "飞行 V3"
+        title.TextColor3 = Color3.fromRGB(255, 255, 255)
+        title.TextSize = 22
+        title.Font = Enum.Font.SourceSansBold
+        title.TextXAlignment = Enum.TextXAlignment.Left
+        title.Parent = frame
+
+        local close = Instance.new("TextButton")
+        close.Size = UDim2.fromOffset(80, 34)
+        close.Position = UDim2.new(1, -85, 0, 2)
+        close.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+        close.Text = "X Aiove"
+        close.TextColor3 = Color3.fromRGB(255, 255, 255)
+        close.TextSize = 16
+        close.Font = Enum.Font.SourceSansBold
+        close.Parent = frame
+        close.Activated:Connect(function()
+            stopFly()
+            gui.Enabled = false
+        end)
+
+        local up = makeFlyButton(frame, "上升", UDim2.fromOffset(5, 43), UDim2.fromOffset(85, 48))
+        local plus = makeFlyButton(frame, "增加飞行\n速度", UDim2.fromOffset(92, 43), UDim2.fromOffset(95, 48))
+        local toggle = makeFlyButton(frame, "飞行 V3", UDim2.fromOffset(190, 43), UDim2.fromOffset(95, 48))
+        local speedLabel = makeFlyButton(frame, tostring(flySpeed), UDim2.fromOffset(287, 43), UDim2.fromOffset(88, 48))
+        local down = makeFlyButton(frame, "下降", UDim2.fromOffset(5, 95), UDim2.fromOffset(85, 48))
+        local minus = makeFlyButton(frame, "减少飞行\n速度", UDim2.fromOffset(92, 95), UDim2.fromOffset(95, 48))
+        local status = makeFlyButton(frame, "飞行关闭", UDim2.fromOffset(190, 95), UDim2.fromOffset(185, 48))
+
+        local function refresh()
+            speedLabel.Text = tostring(flySpeed)
+            status.Text = flyEnabled and "飞行开启" or "飞行关闭"
+            toggle.BackgroundColor3 = flyEnabled and Color3.fromRGB(35, 120, 70) or Color3.fromRGB(35, 35, 35)
+        end
+
+        local function hold(button, setter)
+            button.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    setter(true)
+                end
+            end)
+            button.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    setter(false)
+                end
+            end)
+        end
+
+        hold(up, function(v) flyUp = v end)
+        hold(down, function(v) flyDown = v end)
+
+        plus.Activated:Connect(function()
+            flySpeed = math.clamp(flySpeed + 10, 10, 200)
+            refresh()
+        end)
+        minus.Activated:Connect(function()
+            flySpeed = math.clamp(flySpeed - 10, 10, 200)
+            refresh()
+        end)
+        toggle.Activated:Connect(function()
+            if flyEnabled then stopFly() else startFly() end
+            refresh()
+        end)
+
+        refresh()
+    end
+
+    GeneralTab:Button({
+        Title = "打开手机飞行 V3（X Aiove）",
+        Callback = function()
+            createFlyGui()
         end
     })
 
@@ -938,7 +1056,7 @@ local function createMainWindow()
                 task.spawn(fn)
             end)
             if not ok then
-                warn("[AioveCN] 加载失败: " .. tostring(err))
+                warn("[Aiove] 加载失败: " .. tostring(err))
             end
         end
     })
@@ -946,13 +1064,13 @@ local function createMainWindow()
     task.spawn(fetchScriptList)
 
     -- 不检测游戏、不自动关闭、不加载圣奥里
-    print("[AioveCN] Hub 已启动：信息 / 通用 / 其他服务器脚本")
+    print("[Aiove] Hub 已启动：信息 / 通用 / 其他服务器脚本")
 end
 
 WindUI:Popup({
-    Title = "AioveCN Hub",
+    Title = "Aiove Hub",
     Icon = "sparkles",
-    Content = "欢迎使用 AioveCN Hub\n正在准备通用功能与 01～65 脚本列表。",
+    Content = "欢迎使用 Aiove Hub\n正在准备通用功能与 01～65 脚本列表。",
     Buttons = {
         {
             Title = "开始脚本",
@@ -961,7 +1079,7 @@ WindUI:Popup({
                 task.spawn(function()
                     local ok, err = pcall(createMainWindow)
                     if not ok then
-                        warn("[AioveCN] 启动失败: " .. tostring(err))
+                        warn("[Aiove] 启动失败: " .. tostring(err))
                     end
                 end)
             end
