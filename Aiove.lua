@@ -413,16 +413,62 @@ local function createMainWindow()
             pcall(function() flyVelocity:Destroy() end)
             flyVelocity = nil
         end
+        local _, h = getCharacter()
+        if h then
+            pcall(function() h.AutoRotate = true end)
+        end
+    end
+
+    local function getFlyDirection()
+        local cam = Workspace.CurrentCamera
+        local _, humanoid = getCharacter()
+        if not cam or not humanoid then
+            return Vector3.zero
+        end
+
+        -- 手机/PC 都使用 Roblox 的移动输入：手机摇杆、键盘 W/A/S/D 均会进入 MoveDirection。
+        local move = humanoid.MoveDirection
+        local forwardInput = 0
+        local rightInput = 0
+
+        local flatLook = Vector3.new(cam.CFrame.LookVector.X, 0, cam.CFrame.LookVector.Z)
+        local flatRight = Vector3.new(cam.CFrame.RightVector.X, 0, cam.CFrame.RightVector.Z)
+        if flatLook.Magnitude > 0.001 then flatLook = flatLook.Unit end
+        if flatRight.Magnitude > 0.001 then flatRight = flatRight.Unit end
+
+        if move.Magnitude > 0.01 then
+            forwardInput = move:Dot(flatLook)
+            rightInput = move:Dot(flatRight)
+        end
+
+        -- 前后左右由移动摇杆控制；方向跟随视角。
+        -- 因此把镜头抬高后，推动“前进”会同时产生向上的飞行分量。
+        local dir = Vector3.zero
+        if math.abs(forwardInput) > 0.01 then
+            dir += cam.CFrame.LookVector * forwardInput
+        end
+        if math.abs(rightInput) > 0.01 then
+            dir += cam.CFrame.RightVector * rightInput
+        end
+        if flyUp then dir += Vector3.yAxis end
+        if flyDown then dir -= Vector3.yAxis end
+
+        if dir.Magnitude > 0.001 then
+            return dir.Unit
+        end
+        return Vector3.zero
     end
 
     local function startFly()
         stopFly()
         flyEnabled = true
-        local _, _, root = getCharacter()
-        if not root then
+        local _, h, root = getCharacter()
+        if not root or not h then
             flyEnabled = false
             return
         end
+
+        pcall(function() h.AutoRotate = false end)
 
         flyVelocity = Instance.new("BodyVelocity")
         flyVelocity.MaxForce = Vector3.new(1e6, 1e6, 1e6)
@@ -435,18 +481,8 @@ local function createMainWindow()
                 return
             end
 
-            local cam = Workspace.CurrentCamera
-            if not cam then return end
-
-            local dir = Vector3.zero
-            if flyUp then dir += Vector3.yAxis end
-            if flyDown then dir -= Vector3.yAxis end
-            if UserInputService:IsKeyDown(Enum.KeyCode.W) then dir += cam.CFrame.LookVector end
-            if UserInputService:IsKeyDown(Enum.KeyCode.S) then dir -= cam.CFrame.LookVector end
-            if UserInputService:IsKeyDown(Enum.KeyCode.A) then dir -= cam.CFrame.RightVector end
-            if UserInputService:IsKeyDown(Enum.KeyCode.D) then dir += cam.CFrame.RightVector end
-
-            flyVelocity.Velocity = dir.Magnitude > 0 and dir.Unit * flySpeed or Vector3.zero
+            local dir = getFlyDirection()
+            flyVelocity.Velocity = dir.Magnitude > 0 and dir * flySpeed or Vector3.zero
         end)
     end
 
@@ -485,34 +521,36 @@ local function createMainWindow()
         gui.Parent = playerGui
         flyGui = gui
 
+        -- 尺寸缩小到更接近你截图里的手机飞行面板。
         local frame = Instance.new("Frame")
         frame.Name = "FlyPanel"
-        frame.Size = UDim2.fromOffset(380, 150)
-        frame.Position = UDim2.new(0.5, -190, 0, 90)
+        frame.Size = UDim2.fromOffset(300, 116)
+        frame.Position = UDim2.new(0.5, -150, 0, 90)
         frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
         frame.BackgroundTransparency = 0.08
         frame.BorderSizePixel = 1
         frame.BorderColor3 = Color3.fromRGB(110, 110, 110)
         frame.Parent = gui
 
-        local title = Instance.new("TextLabel")
-        title.Size = UDim2.new(1, -90, 0, 38)
-        title.Position = UDim2.fromOffset(10, 0)
-        title.BackgroundTransparency = 1
-        title.Text = "飞行 V3"
-        title.TextColor3 = Color3.fromRGB(255, 255, 255)
-        title.TextSize = 22
-        title.Font = Enum.Font.SourceSansBold
-        title.TextXAlignment = Enum.TextXAlignment.Left
-        title.Parent = frame
+        local titleBar = Instance.new("TextButton")
+        titleBar.Name = "DragHandle"
+        titleBar.Size = UDim2.new(1, -72, 0, 30)
+        titleBar.Position = UDim2.fromOffset(0, 0)
+        titleBar.BackgroundTransparency = 1
+        titleBar.Text = "飞行 V3"
+        titleBar.TextColor3 = Color3.fromRGB(255, 255, 255)
+        titleBar.TextSize = 18
+        titleBar.Font = Enum.Font.SourceSansBold
+        titleBar.TextXAlignment = Enum.TextXAlignment.Left
+        titleBar.Parent = frame
 
         local close = Instance.new("TextButton")
-        close.Size = UDim2.fromOffset(80, 34)
-        close.Position = UDim2.new(1, -85, 0, 2)
+        close.Size = UDim2.fromOffset(68, 28)
+        close.Position = UDim2.new(1, -70, 0, 1)
         close.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
         close.Text = "X Aiove"
         close.TextColor3 = Color3.fromRGB(255, 255, 255)
-        close.TextSize = 16
+        close.TextSize = 13
         close.Font = Enum.Font.SourceSansBold
         close.Parent = frame
         close.Activated:Connect(function()
@@ -520,13 +558,51 @@ local function createMainWindow()
             gui.Enabled = false
         end)
 
-        local up = makeFlyButton(frame, "上升", UDim2.fromOffset(5, 43), UDim2.fromOffset(85, 48))
-        local plus = makeFlyButton(frame, "增加飞行\n速度", UDim2.fromOffset(92, 43), UDim2.fromOffset(95, 48))
-        local toggle = makeFlyButton(frame, "飞行 V3", UDim2.fromOffset(190, 43), UDim2.fromOffset(95, 48))
-        local speedLabel = makeFlyButton(frame, tostring(flySpeed), UDim2.fromOffset(287, 43), UDim2.fromOffset(88, 48))
-        local down = makeFlyButton(frame, "下降", UDim2.fromOffset(5, 95), UDim2.fromOffset(85, 48))
-        local minus = makeFlyButton(frame, "减少飞行\n速度", UDim2.fromOffset(92, 95), UDim2.fromOffset(95, 48))
-        local status = makeFlyButton(frame, "飞行关闭", UDim2.fromOffset(190, 95), UDim2.fromOffset(185, 48))
+        -- 手机触控拖动：拖动标题栏即可移动整个飞行面板。
+        local dragging = false
+        local dragInput
+        local dragStart
+        local startPos
+
+        titleBar.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                dragging = true
+                dragInput = input
+                dragStart = input.Position
+                startPos = frame.Position
+                input.Changed:Connect(function()
+                    if input.UserInputState == Enum.UserInputState.End then
+                        dragging = false
+                    end
+                end)
+            end
+        end)
+
+        titleBar.InputChanged:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+                dragInput = input
+            end
+        end)
+
+        UserInputService.InputChanged:Connect(function(input)
+            if dragging and input == dragInput then
+                local delta = input.Position - dragStart
+                frame.Position = UDim2.new(
+                    startPos.X.Scale,
+                    startPos.X.Offset + delta.X,
+                    startPos.Y.Scale,
+                    startPos.Y.Offset + delta.Y
+                )
+            end
+        end)
+
+        local up = makeFlyButton(frame, "上升", UDim2.fromOffset(4, 34), UDim2.fromOffset(68, 36))
+        local plus = makeFlyButton(frame, "+速度", UDim2.fromOffset(76, 34), UDim2.fromOffset(68, 36))
+        local toggle = makeFlyButton(frame, "飞行 V3", UDim2.fromOffset(148, 34), UDim2.fromOffset(68, 36))
+        local speedLabel = makeFlyButton(frame, tostring(flySpeed), UDim2.fromOffset(220, 34), UDim2.fromOffset(76, 36))
+        local down = makeFlyButton(frame, "下降", UDim2.fromOffset(4, 74), UDim2.fromOffset(68, 36))
+        local minus = makeFlyButton(frame, "-速度", UDim2.fromOffset(76, 74), UDim2.fromOffset(68, 36))
+        local status = makeFlyButton(frame, "飞行关闭", UDim2.fromOffset(148, 74), UDim2.fromOffset(148, 36))
 
         local function refresh()
             speedLabel.Text = tostring(flySpeed)
@@ -1056,7 +1132,7 @@ local function createMainWindow()
                 task.spawn(fn)
             end)
             if not ok then
-                warn("[Aiove] 加载失败: " .. tostring(err))
+                warn("[AioveCN] 加载失败: " .. tostring(err))
             end
         end
     })
@@ -1064,13 +1140,13 @@ local function createMainWindow()
     task.spawn(fetchScriptList)
 
     -- 不检测游戏、不自动关闭、不加载圣奥里
-    print("[Aiove] Hub 已启动：信息 / 通用 / 其他服务器脚本")
+    print("[AioveCN] Hub 已启动：信息 / 通用 / 其他服务器脚本")
 end
 
 WindUI:Popup({
-    Title = "Aiove Hub",
+    Title = "AioveCN Hub",
     Icon = "sparkles",
-    Content = "欢迎使用 Aiove Hub\n正在准备通用功能与 01～65 脚本列表。",
+    Content = "欢迎使用 AioveCN Hub\n正在准备通用功能与 01～65 脚本列表。",
     Buttons = {
         {
             Title = "开始脚本",
@@ -1079,7 +1155,7 @@ WindUI:Popup({
                 task.spawn(function()
                     local ok, err = pcall(createMainWindow)
                     if not ok then
-                        warn("[Aiove] 启动失败: " .. tostring(err))
+                        warn("[AioveCN] 启动失败: " .. tostring(err))
                     end
                 end)
             end
