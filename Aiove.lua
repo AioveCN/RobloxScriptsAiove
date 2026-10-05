@@ -4131,7 +4131,7 @@ end
 WindUI:Popup({
 	Title = "Aiove HUB",
 	Icon = "sparkles",
-	Content = "Aiove HUB 综合脚本中心\n投稿开源与反馈: 3593722551",
+	Content = "Aiove HUB 脚本\n投稿开源与反馈: 3593722551",
 	Buttons = {
 		{
 			Title = "点这里喵～",
@@ -4141,3 +4141,22 @@ WindUI:Popup({
 	}
 })
 -- 已移除第三方执行上报逻辑：脚本不再向外部服务器发送卡密、账号、JobId 或执行器信息。
+-- 本地保护：只清理自己脚本的痕迹，不动执行器 API
+local function localProtect()
+    -- 1. 清理本脚本在全局变量里留下的痕迹
+    if getgenv then
+        local env = getgenv()
+        for key in pairs(env) do
+            if type(key) == "string" and key:find("^Aiove") then
+                env[key] = nil
+            end
+        end
+    end
+
+    -- 2. 把 HUB 的 UI 放到 gethui()，防止被 game.DescendantAdded 检测
+    -- （你 resolveGuiParent() 已经做了，无需重复）
+
+    -- 3. 不向外部上报任何信息（你末尾已经移除，✓）
+end
+
+task.delay(1, localProtect)
