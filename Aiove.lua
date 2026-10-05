@@ -1,29 +1,6 @@
 --Aiove HUB 开源版本
 --请各位开发者不要用于付费项目
 local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local RunService = game:GetService("RunService")
-local myChar = LocalPlayer.Character
-
-local myH = myChar:FindFirstChild("Humanoid")
-local myRoot = myChar:FindFirstChild("HumanoidRootPart")
-
-local UID = game:GetService("UserInputService")
-
-local togled = nil
-
-UID.InputBegan:Connect(function(IT, gamep)
-	if IT.KeyCode == Enum.KeyCode.V and not gamep then
-		togled = not togled
-	end
-end)
-
-RunService.Heartbeat:Connect(function()
-	if togled and myH.MoveDirection.Magnitude > 0 then
-		myRoot.CFrame += myH.MoveDirection
-	end
-end)
-local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
