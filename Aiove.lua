@@ -4163,7 +4163,7 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/JsYb666/Item/refs/hea
 	addExternalScript(ExecuteSection, "［LSH］", [[loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-LuaSploit-Script-Hub-48779"))()]])
 	addExternalScript(ExecuteSection, "［皮脚本］", [[loadstring(game:HttpGet("https://raw.githubusercontent.com/xiaopi77/xiaopi77/main/QQ1002100032-Roblox-Pi-script.lua"))()]])
 	addExternalScript(ExecuteSection, "黑白脚本", [[loadstring(game:HttpGet('https://raw.githubusercontent.com/tfcygvunbind/Apple/main/黑白脚本加载器'))()]])
-
+    addExternalScript(ExecuteSection, "沙脚本",[[loadstring(game:HttpGet("https://raw.githubusercontent.com/114514lzkill/ShaHUB/refs/heads/main/ShaHUB"))()]])
 	-- 打开脚本后默认显示“信息”一级分类。
 	pcall(function() mainWindow:SelectTab(1) end)
 
@@ -4189,7 +4189,7 @@ end
 WindUI:Popup({
 	Title = "Aiove HUB",
 	Icon = "sparkles",
-	Content = "Aiove HUB 综合脚本中心\n投稿开源与反馈: 3593722551",
+	Content = "Aiove HUB 脚本中心\n投稿开源与反馈: 3593722551",
 	Buttons = {
 		{
 			Title = "关闭UI",
