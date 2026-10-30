@@ -2856,14 +2856,26 @@ local function createMainWindow()
 		Locked = false
 	})
 	local InfoTopSection = InfoTab:Section({Title = "［左上角小圆圈红色删除 黄色最小化］", Icon = "smile", Opened = true})
-	InfoTopSection:Paragraph({Title = "Aiove HUB", Desc = "实时信息中心 · 每秒自动更新"})
-	InfoTab:Paragraph({
-		Title = "Aiove HUB公告",
-		Desc = "通用移动 · 视觉辅助 · 快速交互 · 玩家工具",
-	    Desc = aaaa
-		Image = "zap",
-		ImageSize = 28
-	})
+	InfoTopSection:Paragraph({Title = "Aiove HUB", Desc = "实时信息中心 · 每秒自动更新"}))
+	local announcements = {
+    -- 每次写公告，在开头加上 Time = "时间"
+    { Time = "10-04 04:00", Title = "Aiove HUB 公告", Desc = "通用移动 · 视觉辅助 · 快速交互 · 玩家工具", Image = "zap", ImageSize = 24 },
+    { Time = "10-04 04:30", Title = "公告1", Desc = "欢迎使用 Aiove HUB！本脚本成立于10月4日", Image = "megaphone", ImageSize = 24 },
+    { Time = "10-29 09:15", Title = "公告2", Desc = "本次加入了全部甩飞（在玩家功能中）", Image = "bell", ImageSize = 24 },
+    { Time = "10-28 20:00", Title = "公告3", Desc = "将移动、飞行等上限增加", Image = "star", ImageSize = 24 },
+}
+
+for _, info in ipairs(announcements) do
+    -- 自动把时间拼接到描述前面，格式如：[10-31 12:00] 描述内容
+    local finalDesc = info.Time and ("[" .. info.Time .. "] " .. info.Desc) or info.Desc
+
+    InfoTab:Paragraph({
+        Title = info.Title,
+        Desc = finalDesc,
+        Image = info.Image,
+        ImageSize = info.ImageSize
+    })
+end
 	InfoTab:Paragraph({
 		Title = "投稿开源与反馈",
 		Desc = "3593722551",
