@@ -2850,12 +2850,14 @@ local function createMainWindow()
 	end
 	-- 顶层 UI 入口：信息、通用、圣奥里（独立脚本）、其他服务器脚本。
 	-- 所有其他服务器脚本继续保持独立文件，不拼接源码。
+	-- 这一句是保护罩，防止整个脚本直接崩溃
+pcall(function()
 	local InfoTab = mainWindow:Tab({
 		Title = "信息",
 		Icon = "info",
 		Locked = false
 	})
-	local InfoTopSection = InfoTab:Section({Title = "［左上角小圆圈红色删除 黄色最小化］", Icon = "smile", Opened = true})
+	local InfoTopSection = InfoTab:Section({Title = "左上角小圆圈红色删除 黄色最小化", Icon = "smile", Opened = true})
 	InfoTopSection:Paragraph({Title = "Aiove HUB", Desc = "实时信息中心 · 每秒自动更新"}))
 	local announcements = {
     -- 每次写公告，在开头加上 Time = "时间"
