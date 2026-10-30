@@ -3781,10 +3781,10 @@ local function createMainWindow()
 
 	WaypointTools:Slider({
 		Title = "循环间隔（秒）",
-		Value = {Min = 0.1, Max = 5, Default = 0.5},
+		Value = {Min = 0.01, Max = 5, Default = 0.5},
 		Step = 0.1,
 		Callback = function(v)
-			AioveWaypoint.loopInterval = math.clamp(tonumber(v) or 0.5, 0.1, 5)
+			AioveWaypoint.loopInterval = math.clamp(tonumber(v) or 0.5, 0.01, 5)
 		end
 	})
 
@@ -3933,6 +3933,27 @@ local function createMainWindow()
 		Default = false,
 		Callback = function(v) setLocalRespawn(v) end
 	})
+	PlayerTools:Button({
+	Title = "甩人 (加载外部)",
+	Icon = "download",
+	Callback = function()
+		pcall(function()
+			WindUI:Notify({Title="甩人", Content="正在加载外部脚本...", Duration=2})
+		end)
+		task.spawn(function()
+			local ok, err = pcall(function()
+				local code = game:HttpGet("https://pastebin.com/raw/zqyDSUWX")
+				local func = loadstring(code)
+				if func then func() else error("编译失败") end
+			end)
+			if not ok then
+				pcall(function()
+					WindUI:Notify({Title="加载失败", Content="无法获取或执行外部甩人脚本", Duration=3})
+				end)
+			end
+		end)
+	end
+})
 	PlayerTools:Button({
 		Title = "立即读取角色",
 		Icon = "scan",
