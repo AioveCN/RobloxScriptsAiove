@@ -2856,7 +2856,7 @@ local function createMainWindow()
 		Locked = false
 	})
 	local InfoTopSection = InfoTab:Section({Title = "［左上角小圆圈红色删除 黄色最小化］", Icon = "smile", Opened = true})
-	InfoTopSection:Paragraph({Title = "😎 Aiove HUB", Desc = "😎 实时信息中心 · 每秒自动更新"})
+	InfoTopSection:Paragraph({Title = "Aiove HUB", Desc = "实时信息中心 · 每秒自动更新"})
 	InfoTab:Paragraph({
 		Title = "Aiove HUB",
 		Desc = "通用移动 · 视觉辅助 · 快速交互 · 玩家工具",
@@ -3513,9 +3513,9 @@ local function createMainWindow()
 	})
 	Movement:Slider({
 		Title = "飞行速度",
-		Value = {Min = 10, Max = 1000, Default = math.clamp(PlayerConfig.flySpeed, 10, 1000)},
+		Value = {Min = 10, Max = 2500, Default = math.clamp(PlayerConfig.flySpeed, 10, 2500)},
 		Step = 1,
-		Callback = function(v) PlayerConfig.flySpeed = math.clamp(v, 10, 1000) end
+		Callback = function(v) PlayerConfig.flySpeed = math.clamp(v, 10, 2500) end
 	})
 	Movement:Dropdown({
 		Title = "飞行版本",
@@ -3584,9 +3584,9 @@ local function createMainWindow()
 	})
 	VehicleSection:Slider({
 		Title = "飞车速度",
-		Value = {Min = 20, Max = 2000, Default = math.clamp(VehicleFly.speed, 20, 2000)},
+		Value = {Min = 1, Max = 2000, Default = math.clamp(VehicleFly.speed, 1, 2000)},
 		Step = 1,
-		Callback = function(v) VehicleFly.speed = math.clamp(v, 20, 2000) end
+		Callback = function(v) VehicleFly.speed = math.clamp(v, 1, 2000) end
 	})
 	VehicleSection:Toggle({
 		Title = "显示飞车控制面板",
@@ -3622,13 +3622,13 @@ local function createMainWindow()
 		Desc = "开关式穿墙；采用角色部件缓存和低频校正，避免每帧遍历整个角色。"
 	})
 	Movement:Toggle({
-		Title = "WalkSpeed",
+		Title = "WalkSpeed启动移速",
 		Default = PlayerConfig.walkEnabled,
 		Callback = function(v) PlayerConfig.walkEnabled = v; if v then startWalkLoop() else stopWalkLoop() end end
 	})
 	Movement:Slider({
 		Title = "移动速度",
-		Value = {Min = 16, Max = 500, Default = math.clamp(PlayerConfig.walkSpeed, 16, 500)},
+		Value = {Min = 1, Max = 1000, Default = math.clamp(PlayerConfig.walkSpeed, 1, 1000)},
 		Step = 1,
 		Callback = function(v) PlayerConfig.walkSpeed = v end
 	})
@@ -3639,7 +3639,7 @@ local function createMainWindow()
 	})
 
 	Movement:Toggle({
-		Title = "疾跑",
+		Title = "疾跑速度300",
 		Default = false,
 		Callback = function(v)
 			if v then
@@ -3905,7 +3905,7 @@ local function createMainWindow()
 			if target and teleportNearPlayer(target, TeleportPlayerConfig.offsetMode, TeleportPlayerConfig.offsetDistance) then
 				pcall(function() WindUI:Notify({Title="传送", Content="已传送到 " .. target.Name .. " 附近", Duration=2}) end)
 			else
-				pcall(function() WindUI:Notify({Title="传送", Content="找不到目标玩家或目标未加载", Duration=2.5}) end)
+				pcall(function() WindUI:Notify({Title="传送", Content="找不到目标玩家或目标太远未加载", Duration=2.5}) end)
 			end
 		end
 	})
@@ -3922,9 +3922,9 @@ local function createMainWindow()
 	})
 	TeleportTools:Slider({
 		Title = "循环间隔（秒）",
-		Value = {Min = 0.1, Max = 3, Default = TeleportPlayerConfig.loopInterval},
-		Step = 0.1,
-		Callback = function(v) TeleportPlayerConfig.loopInterval = math.clamp(tonumber(v) or 0.35, 0.1, 3) end
+		Value = {Min = 0.01, Max = 3, Default = TeleportPlayerConfig.loopInterval},
+		Step = 0.01,
+		Callback = function(v) TeleportPlayerConfig.loopInterval = math.clamp(tonumber(v) or 0.35, 0.01, 3) end
 	})
 
 	local PlayerTools = GeneralTab:Section({Title = "玩家功能", Icon = "user", Opened = false})
