@@ -2858,8 +2858,9 @@ local function createMainWindow()
 	local InfoTopSection = InfoTab:Section({Title = "［左上角小圆圈红色删除 黄色最小化］", Icon = "smile", Opened = true})
 	InfoTopSection:Paragraph({Title = "Aiove HUB", Desc = "实时信息中心 · 每秒自动更新"})
 	InfoTab:Paragraph({
-		Title = "Aiove HUB",
+		Title = "Aiove HUB公告",
 		Desc = "通用移动 · 视觉辅助 · 快速交互 · 玩家工具",
+	    Desc = aaaa
 		Image = "zap",
 		ImageSize = 28
 	})
@@ -3934,7 +3935,7 @@ local function createMainWindow()
 		Callback = function(v) setLocalRespawn(v) end
 	})
 	PlayerTools:Button({
-	Title = "甩人 (加载外部)",
+	Title = "甩人 (加载外部全部甩飞)",
 	Icon = "download",
 	Callback = function()
 		pcall(function()
@@ -4064,8 +4065,8 @@ local function createMainWindow()
 		})
 	end
 
-	addOtherServerScript(OtherSection, "01_Aiove_DOORS.lua", "DOORS")
-	addOtherServerScript(OtherSection, "02_Aiove_GB.lua", "GB")
+	addOtherServerScript(OtherSection, "01_Aiove_DOORS.lua", "封了 别怪我DOORS")
+	addOtherServerScript(OtherSection, "02_Aiove_GB.lua", "GB封了 别怪我")
 	addOtherServerScript(OtherSection, "03_Aiove_七日生存.lua", "七日生存")
 	addOtherServerScript(OtherSection, "04_Aiove_不要离开圈子.lua", "不要离开圈子")
 	addOtherServerScript(OtherSection, "05_Aiove_中国人能飞.lua", "中国人能飞")
@@ -4124,7 +4125,7 @@ local function createMainWindow()
 	addOtherServerScript(OtherSection, "58_Aiove_被遗弃.lua", "被遗弃")
 	addOtherServerScript(OtherSection, "59_Aiove_踢出幸运方块.lua", "踢出幸运方块")
 	addOtherServerScript(OtherSection, "60_Aiove_通用血布娃娃战斗.lua", "通用血布娃娃战斗")
-	addOtherServerScript(OtherSection, "61_Aiove_通缉.lua", "通缉")
+	addOtherServerScript(OtherSection, "61_Aiove_通缉.lua", "封了 别怪我 通缉")
 	addOtherServerScript(OtherSection, "62_Aiove_造船寻宝.lua", "造船寻宝")
 	addOtherServerScript(OtherSection, "63_Aiove_键盘速度逃脱.lua", "键盘速度逃脱")
 	addOtherServerScript(OtherSection, "64_Aiove_闪光.lua", "闪光")
@@ -4154,8 +4155,8 @@ local function createMainWindow()
 			end
 		})
 		parent:Button({
-			Title = displayName .. " · 复制",
-			Icon = "copy",
+			Title = displayName .. " · 复制👽已禁用",
+			Icon = "复制换成英文",
 			Callback = function()
 				if type(setclipboard) ~= "function" then
 					pcall(function() WindUI:Notify({Title="复制失败", Content="当前环境没有 setclipboard", Duration=3}) end)
