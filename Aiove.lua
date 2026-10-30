@@ -172,7 +172,36 @@ local function saveSettings()
 		writefile(SETTINGS_FILE, HttpService:JSONEncode(settings))
 	end)
 end
+Start = tick()
+Heartbeat:Connect(HeartbeatUpdate)
+game:GetService("StarterGui"):SetCore("SendNotification",{ Title = "『Aiove中心』"; Text ="核对用户ID中♧"; Duration = 2; })
+game:GetService("StarterGui"):SetCore("SendNotification",{ Title = "『Aiove中心』"; Text ="用户ID核对完毕♣"; Duration = 4; })
+--
+local UITab1 = win:Tab("『信息』",'3593722551')
+
+local about = UITab1:section("『作者信息』",false)
+
+about:Label("Aiove中心㍿")
+about:Label("作者QQ：3593722551")
 loadSettings()
+
+local about = UITab1:section("『玩家信息』",false)
+
+about:Label("你的账号年龄:"..player.AccountAge.."天")
+about:Label("你的注入器:"..identifyexecutor())
+about:Label("你的用户名:"..game.Players.LocalPlayer.Character.Name)
+about:Label("你现在的服务器名称:"..game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name)
+about:Label("你现在的服务器id:"..game.GameId)
+about:Label("你的用户ID:"..game.Players.LocalPlayer.UserId)
+about:Label("获取客户端ID:"..game:GetService("RbxAnalyticsService"):GetClientId())
+
+
+local UITab2 = win:Tab("『公告』",'3593722551')
+
+local about = UITab2:section("『公告』",true)
+
+about:Label("感谢所有支持Aiove的人")
+about:Label("已修复3个bug")
 -- 每次真正载入 Aiove HUB 计为一次使用；次数保存在本地配置文件中，跨天/重启仍保留。
 settings.totalUses = (tonumber(settings.totalUses) or 0) + 1
 saveSettings()
