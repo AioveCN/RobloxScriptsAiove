@@ -2859,10 +2859,10 @@ local function createMainWindow()
 	InfoTopSection:Paragraph({Title = "Aiove HUB公告", Desc = "实时信息中心 · 每秒自动更新"})
 	local announcements = {
     -- 每次写公告，在开头加上 Time = "时间"
-    { Time = "10-04 04:00", Title = "Aiove HUB 反馈与建议", Desc = "QQ,3593722551", Image = "zap", ImageSize = 24 },
+    { Time = "10-04 04:00", Title = "Aiove HUB 反馈与建议", Desc = "QQ 3593722551", Image = "zap", ImageSize = 24 },
     { Time = "10-04 04:30", Title = "公告1", Desc = "欢迎使用 Aiove HUB！本脚本成立于10月4日", Image = "megaphone", ImageSize = 24 },
     { Time = "10-29 09:15", Title = "公告2", Desc = "本次加入了全部甩飞(在玩家功能中)", Image = "bell", ImageSize = 24 },
-    { Time = "10-28 20:00", Title = "公告3", Desc = "将移动、飞行等上限增加", Image = "star", ImageSize = 24 },
+    { Time = "10-28 20:00", Title = "公告3", Desc = "将移动 飞行等上限增加", Image = "star", ImageSize = 24 },
 }
 
 for _, info in ipairs(announcements) do
