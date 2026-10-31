@@ -2856,10 +2856,10 @@ local function createMainWindow()
 		Locked = false
 	})
 	local InfoTopSection = InfoTab:Section({Title = "左上角小圆圈红色删除 黄色最小化", Icon = "smile", Opened = true})
-	InfoTopSection:Paragraph({Title = "Aiove HUB", Desc = "实时信息中心 · 每秒自动更新"})
+	InfoTopSection:Paragraph({Title = "Aiove HUB公告", Desc = "实时信息中心 · 每秒自动更新"})
 	local announcements = {
     -- 每次写公告，在开头加上 Time = "时间"
-    { Time = "10-04 04:00", Title = "Aiove HUB 公告", Desc = "通用移动 · 视觉辅助 · 快速交互 · 玩家工具", Image = "zap", ImageSize = 24 },
+    { Time = "10-04 04:00", Title = "Aiove HUB 反馈与建议", Desc = "QQ,3593722551", Image = "zap", ImageSize = 24 },
     { Time = "10-04 04:30", Title = "公告1", Desc = "欢迎使用 Aiove HUB！本脚本成立于10月4日", Image = "megaphone", ImageSize = 24 },
     { Time = "10-29 09:15", Title = "公告2", Desc = "本次加入了全部甩飞(在玩家功能中)", Image = "bell", ImageSize = 24 },
     { Time = "10-28 20:00", Title = "公告3", Desc = "将移动、飞行等上限增加", Image = "star", ImageSize = 24 },
@@ -2920,21 +2920,21 @@ end
 	end
 	local function getExecutorDisplay()
 		-- Roblox 标准 API 没有可靠的执行器名称字段；无法读取时明确显示未知。
-		return "未知（Roblox 标准 API 不提供）"
+		return "未知（Roblox API 不提供）"
 	end
 	local function getLocalPlatform()
 		if UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled and not UserInputService.MouseEnabled then
-			return "移动端（Android / iOS，无法仅凭 Roblox API 区分商店来源）"
+			return "移动端（Android / iOS，无法仅凭 Roblox API ）"
 		elseif UserInputService.GamepadEnabled and not UserInputService.KeyboardEnabled then
 			return "游戏主机 / 手柄"
 		elseif UserInputService.KeyboardEnabled or UserInputService.MouseEnabled then
-			return "电脑（Windows / macOS 等，无法仅凭 Roblox API 精确区分）"
+			return "电脑（Windows / macOS 等，无法仅凭 Roblox API ）"
 		end
 		return "未知"
 	end
 	local function getRobloxStoreSource()
 		-- Roblox 游戏内标准 API 不提供可靠的 Google Play / App Store 安装来源字段。
-		return "无法可靠判断（官方 Roblox API 不提供）"
+		return "无法可靠判断（无 Roblox API ）"
 	end
 	local function getPlayerDevice(player)
 		-- 只能读取游戏/服务器主动写入的公开属性；不会读取其他玩家私人设备数据。
@@ -2945,7 +2945,7 @@ end
 		if player == LocalPlayer then
 			return getLocalPlatform()
 		end
-		return "未知（其他玩家设备未公开）"
+		return "未知（API进程已阻断）"
 	end
 	local function getPlayerSnapshot(player)
 		local char = player.Character
@@ -3794,10 +3794,10 @@ end
 
 	WaypointTools:Slider({
 		Title = "循环间隔（秒）",
-		Value = {Min = 0.01, Max = 5, Default = 0.5},
+		Value = {Min = 0.01, Max = 10, Default = 0.5},
 		Step = 0.1,
 		Callback = function(v)
-			AioveWaypoint.loopInterval = math.clamp(tonumber(v) or 0.5, 0.01, 5)
+			AioveWaypoint.loopInterval = math.clamp(tonumber(v) or 0.5, 0.01, 10)
 		end
 	})
 
@@ -4166,20 +4166,6 @@ end
 				pcall(function() WindUI:Notify({Title=displayName, Content=ok and "独立脚本已执行" or ("执行失败：" .. tostring(err)), Duration=3}) end)
 			end
 		})
-		parent:Button({
-			Title = displayName .. " · 复制👽已禁用",
-			Icon = "复制换成英文",
-			Callback = function()
-				if type(setclipboard) ~= "function" then
-					pcall(function() WindUI:Notify({Title="复制失败", Content="当前环境没有 setclipboard", Duration=3}) end)
-					return
-				end
-				local ok, err = pcall(function() setclipboard(source) end)
-				pcall(function() WindUI:Notify({Title=displayName, Content=ok and "完整代码已复制" or ("复制失败：" .. tostring(err)), Duration=2.5}) end)
-			end
-		})
-	end
-
 	addExternalScript(ExecuteSection, "Bs脚本", [[BS="\104\116\116\112\115\58\47\47\103\105\116\101\101\46\99\111\109\47\66\83\95\115\99\114\105\112\116\47\115\99\114\105\112\116\47\114\97\119\47\109\97\115\116\101\114\47\66\83\95\83\99\114\105\112\116\46\76\117\97\117"
 loadstring(game:HttpGet(BS))()]])
 	addExternalScript(ExecuteSection, "Bs黑洞中心", [[loadstring(utf8.char((function() return table.unpack({108,111,97,100,115,116,114,105,110,103,40,103,97,109,101,58,72,116,116,112,71,101,116,40,34,104,116,116,112,115,58,47,47,114,97,119,46,103,105,116,104,117,115,101,114,99,111,110,116,101,110,116,46,99,111,109,47,67,104,105,110,97,81,89,47,45,47,109,97,105,110,47,37,69,54,37,56,51,37,56,53,37,69,52,37,66,65,37,57,49,34,41,41,40,41})end)()))() ]])
@@ -4199,15 +4185,35 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/JsYb666/Item/refs/hea
     addExternalScript(ExecuteSection, "沙脚本",[[loadstring(game:HttpGet("https://raw.githubusercontent.com/114514lzkill/ShaHUB/refs/heads/main/ShaHUB"))()]])
 	-- 打开脚本后默认显示“信息”一级分类。
 	pcall(function() mainWindow:SelectTab(1) end)
-
-	mainWindow:OnClose(function()
-		-- 只同步状态；WindUI 原生 Mac 红色按钮负责真正关闭，黄色按钮负责最小化。
-		isWindowOpen = false
-	end)
+		mainWindow:OnClose(function()
+    -- 拦截关闭事件，弹出确认窗口
+    WindUI:Popup({
+        Title = "确认关闭",
+        Icon = "alert-triangle",
+        Content = "您确定要关闭 Aiove HUB 喵？\n欢迎主人下一次使用😭",
+        Buttons = {
+            {
+                Title = "点错了",
+                Variant = "Secondary",
+                Callback = function()
+                    -- 用户点取消，什么都不做，UI 保持开启
+                end,
+            },
+            {
+                Title = "确认关闭",
+                Variant = "Primary",
+                Callback = function()
+                    -- 用户点确认，才真正销毁窗口
+                    isWindowOpen = false
+                    mainWindow:Destroy() 
+                end
+            }
+        }
+    })
+end)
 	mainWindow:OnDestroy(function()
 		stopTeleportLoop()
 		aioveStopWaypointLoop()
-		aioveStopWaypointCycle()
 		aioveDestroyWaypointTool()
 		destroyPlayerQuick()
 		destroyNoclipQuick()
